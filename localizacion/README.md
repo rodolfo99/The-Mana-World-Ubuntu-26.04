@@ -1,48 +1,31 @@
-# Traducción española de NPC
+# Diálogos de NPC en español
 
-Esta versión incluye una **primera pasada automática** sobre los diálogos,
-respuestas y mensajes visibles en los scripts de `world/map/npc`.
-Se modificaron 424 archivos y 11 976 apariciones de textos. El catálogo
-editable está en `npc_es.json`: cada clave es el texto original en inglés
-y cada valor, el español usado. La traducción automática necesita revisión
-de estilo, nombres propios, pistas y contexto de misiones antes de
-considerarse definitiva.
+La traducción incluida es una **primera pasada automática** de diálogos,
+opciones y mensajes visibles en `sources/serverdata/world/map/npc/`.
+Se modificaron 424 archivos y 11 976 apariciones de texto. Requiere revisión
+humana de estilo, pistas y contexto de las misiones antes de considerarse
+definitiva.
 
-Quedan en inglés algunas frases con formatos especiales (`%s`, `##B`,
-`@@enlace@@`, etc.), nombres de personajes y textos que no se muestran
-mediante llamadas directas a `mes`/`menu` y funciones equivalentes.
-Los textos de reglas del juego también se dejaron sin modificar para no
-presentar como actual una traducción de reglas que el proyecto mantiene
-deshabilitada. La interfaz del cliente tiene su catálogo independiente
-`sources/mana/po/es.po`.
+## Preparar la traducción
 
-## Aplicar a una instalación anterior
-
-Con el servidor detenido, conserva una copia de tus personajes y cuentas:
+Después de clonar este repositorio o descargar su ZIP desde GitHub, ejecuta
+desde la raíz:
 
 ```bash
-./scripts/respaldo.sh
+./scripts/preparar-fuentes.sh
 ```
 
-Extrae el ZIP de parche en la raíz de la instalación
-`The-Mana-World-Ubuntu-26.04/` y ejecuta:
+El script obtiene las fuentes fijadas, reconstruye y verifica mediante SHA-256
+`localizacion/npc-es.patch` y `localizacion/npc_es.json`, y aplica el parche a
+los datos del servidor. Esos dos archivos reconstruidos aparecen en tu
+carpeta local y están excluidos de Git porque el repositorio conserva sus
+fragmentos comprimidos. Si el parche ya estaba aplicado, el script lo detecta.
+Si habías modificado los mismos diálogos, Git se detendrá para que revises
+tus cambios.
 
-```bash
-./scripts/aplicar-parche-es.sh
-./scripts/servidor.sh
-```
-
-El script comprueba el parche antes de aplicarlo. Si ya está aplicado,
-no lo vuelve a insertar. Si editaste los mismos archivos NPC, se detiene
-para que puedas resolver tus cambios con cuidado.
-
-## Editar una traducción
-
-Para esta versión basta modificar el texto español en el archivo NPC
-correspondiente y reiniciar el servidor. Si quieres conservar la mejora
-en el catálogo, cambia también el valor de la frase inglesa en
-`npc_es.json`. `scripts/npc_es.py` permite inspeccionar cuántas cadenas
-del catálogo coinciden con una copia original y aplicar el catálogo:
+El catálogo JSON asigna a cada texto original en inglés la traducción usada.
+`scripts/npc_es.py` permite comprobar coincidencias con una copia original y
+aplicar el catálogo:
 
 ```bash
 python3 scripts/npc_es.py \
@@ -50,14 +33,28 @@ python3 scripts/npc_es.py \
   --catalog localizacion/npc_es.json
 ```
 
-## Comprobaciones hechas
+## Alcance
 
-- Comparamos los scripts antes y después: todas las modificaciones,
-  salvo espacios finales retirados de una línea, quedaron dentro de
-  literales de texto; las órdenes y etiquetas del programa son idénticas.
-- `git diff --check` no detecta errores de formato.
-- No se ejecutó el cliente ni el servidor sobre Ubuntu 26.04 desde el
-  entorno de preparación. Revisa en el juego las misiones que utilices.
+Quedan en inglés algunas frases con formatos especiales (`%s`, `##B`,
+`@@enlace@@`, etc.), nombres de personajes y textos que no se muestran
+mediante llamadas directas a `mes`, `menu` y funciones equivalentes. Los
+textos de reglas del juego se dejaron sin modificar. La interfaz del cliente
+utiliza un catálogo independiente en `sources/mana/po/es.po`.
 
-Las fuentes y sus licencias originales se conservan. Esta traducción no
-es una publicación oficial de The Mana World.
+Para corregir un diálogo, edita el archivo NPC correspondiente y reinicia el
+proceso del mapa. Si quieres conservar el cambio como parte del catálogo,
+actualiza también `localizacion/npc_es.json`. Los archivos dentro de
+`sources/serverdata` pertenecen a un submódulo: un `git status` en la raíz
+mostrará ese submódulo como modificado después de aplicar la traducción.
+
+## Verificación realizada
+
+La comparación de los 424 scripts modificados confirmó que las órdenes,
+etiquetas y flujo del programa conservaron su estructura; solo cambiaron
+textos visibles y algunos espacios finales. `git diff --check` no detectó
+errores de formato. También se comprobó que los parches reconstruidos
+coinciden byte por byte con los originales preparados. Aún falta revisar las
+misiones dentro del juego en Ubuntu 26.04.
+
+Las fuentes y sus licencias originales se conservan. Esta traducción no es
+una publicación oficial de The Mana World.
