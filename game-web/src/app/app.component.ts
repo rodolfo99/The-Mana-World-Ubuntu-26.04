@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, NgZone, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GameEntity, WorldRenderer } from './world-renderer';
@@ -23,12 +23,12 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   private socket?: WebSocket;
   private worldRequest = 0;
   private keyDelay = 0;
-  private awaitingLogin = false;
 
   phase: 'login' | 'characters' | 'game' = 'login';
   authMode: 'login' | 'register' = 'login';
   status = 'Conecta con tu servidor local para comenzar.';
   busy = false;
+  hasError = false;
   username = '';
   password = '';
   sex: 'M' | 'F' = 'M';
@@ -48,7 +48,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   loadingMap = false;
   connected = false;
 
-  constructor(private readonly zone: NgZone) {}
+  constructor(private readonly zone: NgZone, private readonly changes: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
     try { this.renderer = this.zone.runOutsideAngular(() => new WorldRenderer(this.viewport.nativeElement)); }
@@ -64,6 +64,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   submitAuth(): void {
     if (this.busy || !this.username.trim() || !this.password) return;
     this.busy = true;
+    this.hasError = false;
     this.status = 'Estableciendo conexión…';
     const auth = { type: 'login', username: this.username.trim(), password: this.password,
       register: this.authMode === 'register', sex: this.sex };
@@ -80,10 +81,21 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         this.status = 'Verificando cuenta…';
         socket.send(JSON.stringify(auth));
         this.password = '';
+        this.changes.markForCheck();
       }, { once: true });
-      socket.addEventListener('message', event => this.receive(event.data));
+      socket.addEventListener('message', event => {
+        if (this.socket !== socket) return;
+        this.receive(event.data);
+        // Angular 22 uses zoneless/OnPush defaults. Native WebSocket callbacks
+        // must notify Angular when they change fields used by the template.
+        this.changes.markForCheck();
+      });
       socket.addEventListener('error', () => {
-        if (this.socket === socket) this.status = 'No se pudo conectar al servidor de juego.';
+        if (this.socket !== socket) return;
+        this.busy = false;
+        this.hasError = true;
+        this.status = 'No se pudo conectar al servidor de juego.';
+        this.changes.markForCheck();
       });
       socket.addEventListener('close', () => {
         if (this.socket !== socket) return;
@@ -91,10 +103,13 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         this.busy = false;
         this.loadingMap = false;
         this.phase = 'login';
-        this.status = 'Se perdió la conexión. Comprueba que el servidor siga activo.';
+        if (!this.hasError) this.status = 'Se perdió la conexión. Comprueba que el servidor siga activo.';
+        this.hasError = true;
+        this.changes.markForCheck();
       });
     } catch (error) {
       this.busy = false;
+      this.hasError = true;
       this.status = this.errorText(error);
     }
   }
@@ -114,6 +129,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       case 'characters':
         this.characters = Array.isArray(event['characters']) ? event['characters'] as Character[] : [];
         this.phase = 'characters'; this.busy = false;
+        this.hasError = false;
         this.status = 'Elige un personaje para entrar a The Mana World.';
         break;
       case 'world':
@@ -158,6 +174,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         break;
       case 'error':
         this.busy = false;
+        this.hasError = true;
         this.status = String(event['message'] ?? 'El servidor informó un error.');
         this.log('Sistema', this.status, 'error');
         break;
@@ -191,6 +208,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.loadingMap = false;
       this.status = this.errorText(error);
       this.log('Recursos', this.status, 'error');
+    } finally {
+      if (sequence === this.worldRequest) this.changes.markForCheck();
     }
   }
 

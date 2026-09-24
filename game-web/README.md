@@ -1,4 +1,4 @@
-# Cliente jugable Angular para The Mana World (v0.2.0)
+# Cliente jugable Angular para The Mana World (v0.2.1)
 
 Esta aplicación es independiente de `admin-web/`. Conserva el servidor TMWA
 y los datos del mundo de este repositorio; un servicio Node local convierte
@@ -37,6 +37,36 @@ instala dependencias con `npm ci` y compila Angular. El servidor TMWA usa
 con `GAME_WEB_PORT=3021 ./scripts/juego-web.sh` si 3020 está ocupado.
 Node.js compatible: 22.22.3+, 24.15+ o 26+.
 
+## Actualizar una instalación 0.2.0 que queda en «Conectando…»
+
+Detén el cliente web con `Ctrl+C`. Desde la raíz de la instalación, ejecuta:
+
+```bash
+git fetch origin main
+git restore --source=origin/main -- game-web
+./scripts/juego-web.sh
+```
+
+Estos comandos descargan y sustituyen los archivos de `game-web/`; si hiciste
+cambios propios en ese directorio, guárdalos antes. El script recompila la web.
+Recarga `http://127.0.0.1:3020` con `Ctrl+Shift+R`. El servidor TMWA puede
+seguir encendido; no hace falta repetir la instalación de sus binarios.
+
+El ZIP completo 0.2.0 incluía metadatos Git, por lo que también admite esos
+comandos. Si obtuviste una copia sin Git, utiliza el ZIP completo 0.2.1.
+
+La causa corregida era la actualización de la interfaz: Angular 22 utiliza
+por defecto detección de cambios sin Zone.js y estrategia OnPush. Los eventos
+WebSocket y el resultado asíncrono de cargar el mapa ahora llaman a
+`ChangeDetectorRef.markForCheck()`. Se retiró Zone.js del cliente de juego.
+Referencia: [documentación oficial de Angular](https://angular.dev/guide/zoneless).
+
+El formulario muestra el estado y el motivo de rechazo junto al botón. Por
+ejemplo, si la cuenta no existe, selecciona **Crear cuenta**; si la contraseña
+es incorrecta, vuelve a introducirla. También se informa cuando no hay servidor
+de personajes o la cuenta ya está conectada. Las esperas de acceso, lista de
+personajes, creación, selección y entrada al mapa tienen un límite de 15 segundos.
+
 ## Funciones de esta versión
 
 | Función | Uso |
@@ -70,7 +100,8 @@ fuera de esta versión.
 - `backend/session.mjs`: conecta sucesivamente con login, personajes y mapa;
   valida las órdenes enviadas por el navegador.
 - `tests/`: prueba de paquetes fragmentados y flujo completo frente a tres
-  servidores TCP simulados, sin modificar cuentas reales.
+  servidores TCP simulados, errores de autenticación y tiempos de espera;
+  pruebas de la interfaz con Chromium, sin modificar cuentas reales.
 
 Los puertos de TMWA son TCP propios del juego; su panel `admin-web/` utiliza
 otro servicio y no sirve como pasarela de partidas. El servicio web nunca
@@ -88,6 +119,24 @@ npm test
 npm run build
 node backend/server.mjs
 ```
+
+Para verificar también la interfaz en un navegador:
+
+```bash
+npx playwright install chromium --only-shell
+npm run test:ui
+```
+
+`test:ui` compila Angular y comprueba respuestas WebSocket demoradas, rechazo
+de acceso y desconexión. Usa respuestas simuladas y carga el mapa original
+`029-2` desde los recursos locales; comprueba que la vista cambie sin otro clic.
+El navegador puede indicarse con `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` y el
+puerto de pruebas con `GAME_WEB_TEST_PORT` (31320 por defecto).
+
+Validación de 0.2.1: ocho pruebas del protocolo/pasarela y tres pruebas de
+navegador satisfactorias. La prueba del cambio de pantalla fallaba en el
+paquete 0.2.0 y pasa con esta corrección. Esto no sustituye una partida real
+con los tres procesos TMWA en Ubuntu 26.04.
 
 El backend requiere que estén inicializados los submódulos `sources/mana` y
 `sources/serverdata/client-data`. Para desarrollo del repositorio ejecuta

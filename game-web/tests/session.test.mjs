@@ -91,6 +91,42 @@ function pos2(buf, offset, srcX, srcY, dstX, dstY) {
   buf[offset + 4] = dstY & 255;
 }
 
+for (const scenario of [
+  { name: 'unknown account', id: 0x006a, size: 23, code: 0, expected: /La cuenta no existe/ },
+  { name: 'wrong password', id: 0x006a, size: 23, code: 1, expected: /contraseña es incorrecta/ },
+  { name: 'no character server', id: 0x0081, size: 3, code: 1, expected: /No hay un servidor de personajes/ },
+  { name: 'already logged in', id: 0x0081, size: 3, code: 2, expected: /cuenta ya está conectada/ },
+  { name: 'unresponsive login server', expected: /tardó demasiado/ },
+]) {
+  test(`login failure releases the session: ${scenario.name}`, { timeout: 5000 }, async t => {
+    const tasks = [], sockets = new Set();
+    const login = await fakeServer(async socket => {
+      const reader = new SocketReader(socket);
+      await reader.bytes(2);
+      socket.write(packet(0x7531, 10));
+      await reader.bytes(55);
+      if (scenario.id) {
+        const reply = packet(scenario.id, scenario.size);
+        reply[2] = scenario.code;
+        socket.write(reply);
+      }
+    }, tasks, sockets);
+    const ws = new FakeWebSocket();
+    const session = new GameSession(ws, lengths, { login: login.address().port }, { replyTimeoutMs: 250 });
+    t.after(async () => {
+      session.close();
+      for (const socket of sockets) socket.destroy();
+      await new Promise(resolve => login.close(resolve));
+    });
+    session.command({ type: 'login', username: 'tester', password: 'secret' });
+    assert.match((await ws.wait('error')).message, scenario.expected);
+    assert.equal(session.phase, 'closed');
+    assert.equal(session.credentials, null);
+    assert.equal(session.replyTimer, null);
+    await Promise.all(tasks);
+  });
+}
+
 test('real TCP login, registration, character creation, map, movement and play commands', { timeout: 15000 }, async t => {
   const tasks = [], sockets = new Set();
   let walkResponse;

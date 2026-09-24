@@ -8,9 +8,28 @@ const idPacket = (id, target, size = 6) => {
 };
 const label = message => String(message).slice(0, 180);
 const worldMap = name => name.replace(/\.(gat|tmx)$/i, '');
+const loginErrors = {
+  0: 'La cuenta no existe. Usa Crear cuenta para registrarte.',
+  1: 'La contraseña es incorrecta.',
+  2: 'La cuenta ha caducado.',
+  3: 'El servidor rechazó el acceso.',
+  4: 'La cuenta está bloqueada permanentemente.',
+  5: 'El servidor requiere una versión más reciente del cliente.',
+  6: 'La cuenta está bloqueada temporalmente.',
+  7: 'El servidor está lleno. Inténtalo más tarde.',
+  9: 'Ese nombre de usuario ya está registrado.',
+  99: 'La cuenta fue eliminada.',
+};
+const connectionErrors = {
+  0: 'El servidor rechazó la autenticación.',
+  1: 'No hay un servidor de personajes disponible. Comprueba ./scripts/servidor.sh.',
+  2: 'La cuenta ya está conectada o hubo demasiados intentos. Espera antes de reintentar.',
+  3: 'El servidor rechazó la velocidad de las acciones del cliente.',
+  8: 'La cuenta inició sesión en otro cliente.',
+};
 
 export class GameSession {
-  constructor(ws, lengths, ports = { login: 6901, char: 6122, map: 5122 }) {
+  constructor(ws, lengths, ports = { login: 6901, char: 6122, map: 5122 }, { replyTimeoutMs = 15000 } = {}) {
     this.ws = ws;
     this.lengths = lengths;
     this.ports = ports;
@@ -22,6 +41,8 @@ export class GameSession {
     this.npc = 0;
     this.inventory = new Map();
     this.names = new Set();
+    this.replyTimeoutMs = replyTimeoutMs;
+    this.replyTimer = null;
   }
 
   emit(data) {
@@ -29,9 +50,29 @@ export class GameSession {
   }
 
   close() {
+    this.clearReplyTimeout();
+    this.credentials = null;
     this.phase = 'closed';
     this.socket?.destroy();
     this.socket = null;
+  }
+
+  clearReplyTimeout() {
+    clearTimeout(this.replyTimer);
+    this.replyTimer = null;
+  }
+
+  waitForReply() {
+    this.clearReplyTimeout();
+    this.replyTimer = setTimeout(() => {
+      this.fail('El servidor tardó demasiado en responder. Comprueba ./scripts/servidor.sh e inténtalo de nuevo.');
+    }, this.replyTimeoutMs);
+    this.replyTimer.unref();
+  }
+
+  fail(message) {
+    this.emit({ type: 'error', message });
+    this.close();
   }
 
   connect(phase) {
@@ -39,6 +80,7 @@ export class GameSession {
     this.phase = phase;
     const socket = net.createConnection({ host: '127.0.0.1', port: this.ports[phase] });
     this.socket = socket;
+    this.waitForReply();
     const decoder = new PacketDecoder(this.lengths, (id, p) => this.receive(id, p), phase === 'login' ? 0 : 4);
     socket.on('connect', () => {
       if (socket !== this.socket) return;
@@ -66,23 +108,24 @@ export class GameSession {
     socket.on('data', data => {
       if (socket !== this.socket) return;
       try { decoder.push(data); } catch (error) {
-        this.emit({ type: 'error', message: `Protocolo incompatible: ${label(error.message)}` });
-        this.close();
+        this.fail(`Protocolo incompatible: ${label(error.message)}`);
       }
     });
     socket.on('error', error => {
-      if (socket === this.socket) this.emit({ type: 'error', message: `No se pudo conectar a ${phase}: ${label(error.message)}` });
+      if (socket === this.socket) this.fail(`No se pudo conectar a ${phase}: ${label(error.message)}`);
     });
     socket.on('close', () => {
       if (socket !== this.socket) return;
+      this.clearReplyTimeout();
+      this.credentials = null;
       this.socket = null;
       if (this.phase !== 'closed') this.emit({ type: 'status', phase: 'disconnected', message: 'El servidor cerró la conexión.' });
     });
   }
 
-  send(data) {
+  send(data, onWritten) {
     if (!this.socket || !this.socket.writable) throw new Error('No hay conexión con TMWA');
-    this.socket.write(data);
+    this.socket.write(data, onWritten);
   }
 
   command(raw) {
@@ -105,6 +148,7 @@ export class GameSession {
       const p = packet(0x0066, 3);
       p[2] = slot;
       this.send(p);
+      this.waitForReply();
       return;
     }
     if (type === 'create' && this.phase === 'char') {
@@ -118,6 +162,7 @@ export class GameSession {
       p.writeUInt16LE(0, 33);
       p.writeUInt16LE(1, 35);
       this.send(p);
+      this.waitForReply();
       return;
     }
     if (this.phase !== 'map') throw new Error('Entra primero al juego');
@@ -197,20 +242,21 @@ export class GameSession {
       fixedString(auth, password, 30, 24);
       auth[54] = 3;
       this.credentials = null;
-      this.send(auth);
-      auth.fill(0);
+      this.send(auth, () => auth.fill(0));
       return;
     }
-    if (id === 0x006a) { this.emit({ type: 'error', message: `Acceso rechazado (código ${p[2]}).` }); this.close(); return; }
+    if (id === 0x006a) { this.fail(loginErrors[p[2]] ?? `Acceso rechazado (código ${p[2]}).`); return; }
+    if (id === 0x0081) { this.fail(connectionErrors[p[2]] ?? `Conexión rechazada (código ${p[2]}).`); return; }
     if (id === 0x0069 && this.phase === 'login') {
       if (p.length < 79 || (p.length - 47) % 32) throw new Error('Lista de mundos inválida');
       this.token = { session1: p.readUInt32LE(4), account: p.readUInt32LE(8), session2: p.readUInt32LE(12), sex: p[46] };
       this.connect('char');
       return;
     }
-    if (id === 0x006c) { this.emit({ type: 'error', message: `El servidor de personajes rechazó el acceso (${p[2]}).` }); return; }
+    if (id === 0x006c) { this.fail(`El servidor de personajes rechazó el acceso (${p[2]}).`); return; }
     if (id === 0x006b && this.phase === 'char') {
       if ((p.length - 24) % 106) throw new Error('Lista de personajes inválida');
+      this.clearReplyTimeout();
       this.characters = [];
       for (let i = 24; i + 106 <= p.length; i += 106) this.characters.push({
         id: p.readUInt32LE(i), name: textAt(p, i + 74, 24), slot: p[i + 104],
@@ -220,6 +266,7 @@ export class GameSession {
       return;
     }
     if (id === 0x006d && this.phase === 'char') {
+      this.clearReplyTimeout();
       const i = 2;
       const created = { id: p.readUInt32LE(i), name: textAt(p, i + 74, 24), slot: p[i + 104],
         level: p.readUInt16LE(i + 58), hp: p.readUInt16LE(i + 42), maxHp: p.readUInt16LE(i + 44), sex: p[i + 105] };
@@ -227,7 +274,7 @@ export class GameSession {
       this.emit({ type: 'characters', characters: this.characters });
       return;
     }
-    if (id === 0x006e) { this.emit({ type: 'error', message: 'No se pudo crear el personaje.' }); return; }
+    if (id === 0x006e) { this.clearReplyTimeout(); this.emit({ type: 'error', message: 'No se pudo crear el personaje. Prueba con otro nombre.' }); return; }
     if (id === 0x0071 && this.phase === 'char') {
       if (p.readUInt32LE(2) !== this.character?.id) throw new Error('Personaje inesperado');
       this.map = worldMap(textAt(p, 6, 16));
@@ -235,6 +282,7 @@ export class GameSession {
       return;
     }
     if (id === 0x0073 && this.phase === 'map') {
+      this.clearReplyTimeout();
       const pos = positionAt(p, 6);
       this.emit({ type: 'world', map: this.map, x: pos.x, y: pos.y, id: this.token.account, name: this.character.name });
       return;

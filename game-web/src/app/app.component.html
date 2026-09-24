@@ -29,6 +29,7 @@
               {{ busy ? 'Conectando…' : authMode === 'register' ? 'Crear cuenta y continuar →' : 'Entrar al mundo →' }}
             </button>
           </form>
+          <p class="auth-status" role="status" aria-live="polite" [class.error]="hasError">{{ status }}</p>
           <p class="auth-note">Tu servidor TMWA debe estar encendido en esta máquina.</p>
         </div>
       </div>
@@ -38,6 +39,7 @@
           <div class="eyebrow">ELIGE TU CAMINO</div>
           <h1>Tus personajes</h1>
           <p class="lead">Continúa una aventura o empieza otra.</p>
+          <p class="auth-status" role="status" aria-live="polite" [class.error]="hasError">{{ status }}</p>
           <div class="character-list">
             <button type="button" class="character-choice" *ngFor="let character of characters" (click)="choose(character)" [disabled]="busy">
               <span class="character-emblem">✦</span><span class="character-detail"><strong>{{ character.name }}</strong><small>NIVEL {{ character.level }} · ESPACIO {{ character.slot + 1 }}</small></span><span class="choice-arrow">↗</span>
