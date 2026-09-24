@@ -107,6 +107,31 @@ administrativa puedes consultar `help`, `list` y `help add`. Los niveles GM
 se guardan en `sources/serverdata/login/save/gm_account.txt` y pueden requerir
 volver a iniciar sesión para reflejarse.
 
+### Panel gráfico en Angular
+
+Con el servidor instalado y encendido, abre otra terminal y ejecuta:
+
+```bash
+./scripts/admin-web.sh
+```
+
+Abre **http://127.0.0.1:3010** en el navegador. El primer inicio ejecuta
+`npm ci` y compila Angular; requiere Internet, npm y Node.js compatible
+(22.22.3+, 24.15+ o 26+). Luego basta ejecutar el mismo script. Para detener
+el panel, pulsa `Ctrl+C`; para cambiar el puerto, usa
+`ADMIN_WEB_PORT=3011 ./scripts/admin-web.sh`. No necesita Docker ni una
+contraseña adicional: el servicio local usa `tmwa-admin` y su configuración
+privada. Solo escucha en `127.0.0.1` y no está diseñado para publicarse en
+una red ni detrás de un proxy.
+
+El panel permite listar cuentas por rango, consultar niveles GM y jugadores
+en línea, buscar ID y datos de una cuenta, asignar nivel GM, bloquear o
+desbloquear cuentas y enviar avisos globales. Confirma las acciones que
+modifican datos. Los avisos aceptan únicamente caracteres ASCII porque
+`tmwa-admin` rechaza comandos con caracteres de control o no ASCII. Para
+crear cuentas, cambiar contraseñas y otras operaciones usa `./scripts/admin.sh`
+o el registro del cliente. Consulta [la guía del panel](admin-web/README.md).
+
 ## Español
 
 El cliente incorpora el catálogo `sources/mana/po/es.po`. En Mana selecciona
@@ -150,6 +175,7 @@ puede cambiar con el tiempo.
 | `sources/serverdata` | Cuentas, personajes, mapas y scripts NPC |
 | `sources/mana` | Cliente Mana y Guichan |
 | `scripts/` | Preparación, instalación, arranque y diagnóstico |
+| `admin-web/` | Interfaz Angular y servicio de administración local |
 | `localizacion/` | Parches y catálogo español reconstruidos al preparar |
 | `instalado/` | Binarios locales tras compilar |
 | `respaldos/` | Copias de cuentas y personajes |

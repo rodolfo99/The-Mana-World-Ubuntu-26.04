@@ -1,0 +1,27 @@
+<header class="topbar"><div class="brand"><span class="mark">M</span><div><strong>The Mana World</strong><small>Administración local</small></div></div><span class="local">● SOLO EN ESTE EQUIPO</span></header>
+<main>
+  <section class="intro"><div><p class="eyebrow">PANEL DE CONTROL · TMWA</p><h1>Tu mundo, bajo control.</h1><p>Consulta cuentas, administra permisos y envía avisos desde la misma computadora donde corre el servidor.</p></div><button type="button" class="outline" (click)="refresh()">Actualizar estado</button></section>
+  <section class="status" aria-label="Estado del servicio">
+    <div><span class="status-icon" [class.ok]="status()?.installed">●</span><div><strong>Herramienta</strong><small>{{ status()?.installed ? 'tmwa-admin instalado' : 'Instala el servidor primero' }}</small></div></div>
+    <div><span class="status-icon" [class.ok]="status()?.configured">●</span><div><strong>Configuración</strong><small>{{ status()?.configured ? 'Administración preparada' : 'Falta configurar la instancia' }}</small></div></div>
+    <div><span class="status-icon" [class.ok]="status()?.login">●</span><div><strong>Login</strong><small>{{ status()?.login ? 'Puerto 6901 disponible' : 'Inicia ./scripts/servidor.sh' }}</small></div></div>
+  </section>
+  <div class="grid">
+    <div class="controls">
+      <section class="card"><div class="card-head"><span class="num">01</span><div><h2>Explorar cuentas</h2><p>Busca usuarios y revisa quién está conectado.</p></div></div>
+        <div class="fields two"><label>Desde ID<input type="number" [(ngModel)]="startId" min="0" placeholder="2000000"></label><label>Hasta ID<input type="number" [(ngModel)]="endId" min="0" placeholder="2000100"></label></div>
+        <p class="hint">Consulta hasta 200 identificadores consecutivos.</p><div class="buttons"><button type="button" (click)="run('list')" [disabled]="busy()">Listar cuentas</button><button type="button" class="secondary" (click)="run('listgm')" [disabled]="busy()">Ver GM</button><button type="button" class="secondary" (click)="run('getcount')" [disabled]="busy()">En línea</button></div>
+      </section>
+      <section class="card"><div class="card-head"><span class="num">02</span><div><h2>Una cuenta</h2><p>Busca el ID de un usuario o consulta sus datos.</p></div></div>
+        <label>Nombre de cuenta<input [(ngModel)]="account" maxlength="23" placeholder="Nombre del jugador"></label><label>ID de cuenta<input type="number" [(ngModel)]="accountId" min="1" placeholder="2000000"></label><div class="buttons"><button type="button" (click)="run('id')" [disabled]="busy()">Buscar ID</button><button type="button" class="secondary" (click)="run('info')" [disabled]="busy()">Consultar ID</button></div>
+      </section>
+      <section class="card"><div class="card-head"><span class="num">03</span><div><h2>Permisos y acceso</h2><p>Se aplican al nombre de cuenta indicado arriba.</p></div></div>
+        <label>Nivel GM (0–99)<input type="number" [(ngModel)]="level" min="0" max="99" placeholder="80"></label><div class="buttons"><button type="button" (click)="run('gm')" [disabled]="busy()">Asignar GM</button><button type="button" class="danger" (click)="run('block')" [disabled]="busy()">Bloquear</button><button type="button" class="secondary" (click)="run('unblock')" [disabled]="busy()">Desbloquear</button></div>
+      </section>
+      <section class="card"><div class="card-head"><span class="num">04</span><div><h2>Aviso global</h2><p>El servidor envía el texto a los jugadores.</p></div></div>
+        <label>Mensaje (ASCII, máximo 160 caracteres)<textarea [(ngModel)]="message" maxlength="160" rows="3" placeholder="Mantenimiento en 10 minutos"></textarea></label><button type="button" (click)="run('kami')" [disabled]="busy()">Enviar aviso</button>
+      </section>
+    </div>
+    <aside class="card console"><div class="console-head"><div><p class="eyebrow">RESPUESTA DE TMWA</p><h2>{{ lastAction() }}</h2></div><span class="terminal-dot">● ● ●</span></div><p class="error" role="alert" [hidden]="!error()">{{ error() }}</p><pre aria-live="polite">{{ busy() ? 'Consultando el servidor…' : result() }}</pre><p class="hint">Los mensajes proceden de tmwa-admin y pueden aparecer en inglés. Ninguna contraseña de administración se envía al navegador.</p></aside>
+  </div>
+</main>
