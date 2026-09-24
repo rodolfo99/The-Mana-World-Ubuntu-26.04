@@ -15,13 +15,29 @@
       <section class="card"><div class="card-head"><span class="num">02</span><div><h2>Una cuenta</h2><p>Busca el ID de un usuario o consulta sus datos.</p></div></div>
         <label>Nombre de cuenta<input [(ngModel)]="account" maxlength="23" placeholder="Nombre del jugador"></label><label>ID de cuenta<input type="number" [(ngModel)]="accountId" min="1" placeholder="2000000"></label><div class="buttons"><button type="button" (click)="run('id')" [disabled]="busy()">Buscar ID</button><button type="button" class="secondary" (click)="run('info')" [disabled]="busy()">Consultar ID</button></div>
       </section>
-      <section class="card"><div class="card-head"><span class="num">03</span><div><h2>Permisos y acceso</h2><p>Se aplican al nombre de cuenta indicado arriba.</p></div></div>
+      <section class="card"><div class="card-head"><span class="num">03</span><div><h2>Crear cuenta</h2><p>Da de alta una cuenta nueva para entrar al juego.</p></div></div>
+        <label>Nombre nuevo (4–23 caracteres)<input [(ngModel)]="newAccount" maxlength="23" autocomplete="off" spellcheck="false" placeholder="Nombre del jugador"></label>
+        <div class="fields two"><label>Sexo<select [(ngModel)]="newSex"><option value="N">No especificado</option><option value="M">Masculino</option><option value="F">Femenino</option></select></label><label>Correo electrónico<input type="email" [(ngModel)]="newEmail" maxlength="39" autocomplete="off" spellcheck="false" placeholder="jugador@ejemplo.org"></label></div>
+        <div class="fields two"><label>Contraseña<input type="password" [(ngModel)]="newPassword" minlength="4" maxlength="23" autocomplete="new-password" placeholder="4–23 caracteres"></label><label>Repetir contraseña<input type="password" [(ngModel)]="newPasswordRepeat" minlength="4" maxlength="23" autocomplete="new-password" placeholder="Repite la contraseña"></label></div>
+        <p class="hint">Usa caracteres ASCII, sin espacios ni comillas.</p><button type="button" (click)="createAccount()" [disabled]="busy()">Crear cuenta</button>
+      </section>
+      <section class="card"><div class="card-head"><span class="num">04</span><div><h2>Cambiar contraseña</h2><p>Define una contraseña nueva para una cuenta existente.</p></div></div>
+        <label>Nombre de la cuenta<input [(ngModel)]="passwordAccount" maxlength="23" autocomplete="off" spellcheck="false" placeholder="Nombre del jugador"></label>
+        <div class="fields two"><label>Contraseña nueva<input type="password" [(ngModel)]="replacementPassword" minlength="4" maxlength="23" autocomplete="new-password" placeholder="4–23 caracteres"></label><label>Repetir contraseña<input type="password" [(ngModel)]="replacementPasswordRepeat" minlength="4" maxlength="23" autocomplete="new-password" placeholder="Repite la contraseña"></label></div>
+        <p class="hint">Se te pedirá confirmación antes de cambiarla.</p><button type="button" (click)="changePassword()" [disabled]="busy()">Cambiar contraseña</button>
+      </section>
+      <section class="card danger-zone"><div class="card-head"><span class="num">05</span><div><h2>Borrar cuenta</h2><p>El borrado es permanente. Comprueba bien el nombre.</p></div></div>
+        <label>Cuenta que quieres borrar<input [(ngModel)]="deleteAccount" maxlength="23" autocomplete="off" spellcheck="false" placeholder="Nombre del jugador"></label>
+        <label>Escribe de nuevo exactamente el nombre<input [(ngModel)]="confirmDeleteAccount" maxlength="23" autocomplete="off" spellcheck="false" placeholder="Confirma el nombre de la cuenta"></label>
+        <button type="button" class="danger" (click)="deleteSelectedAccount()" [disabled]="busy()">Borrar cuenta permanentemente</button>
+      </section>
+      <section class="card"><div class="card-head"><span class="num">06</span><div><h2>Permisos y acceso</h2><p>Se aplican al nombre de cuenta indicado arriba.</p></div></div>
         <label>Nivel GM (0–99)<input type="number" [(ngModel)]="level" min="0" max="99" placeholder="80"></label><div class="buttons"><button type="button" (click)="run('gm')" [disabled]="busy()">Asignar GM</button><button type="button" class="danger" (click)="run('block')" [disabled]="busy()">Bloquear</button><button type="button" class="secondary" (click)="run('unblock')" [disabled]="busy()">Desbloquear</button></div>
       </section>
-      <section class="card"><div class="card-head"><span class="num">04</span><div><h2>Aviso global</h2><p>El servidor envía el texto a los jugadores.</p></div></div>
+      <section class="card"><div class="card-head"><span class="num">07</span><div><h2>Aviso global</h2><p>El servidor envía el texto a los jugadores.</p></div></div>
         <label>Mensaje (ASCII, máximo 160 caracteres)<textarea [(ngModel)]="message" maxlength="160" rows="3" placeholder="Mantenimiento en 10 minutos"></textarea></label><button type="button" (click)="run('kami')" [disabled]="busy()">Enviar aviso</button>
       </section>
     </div>
-    <aside class="card console"><div class="console-head"><div><p class="eyebrow">RESPUESTA DE TMWA</p><h2>{{ lastAction() }}</h2></div><span class="terminal-dot">● ● ●</span></div><p class="error" role="alert" [hidden]="!error()">{{ error() }}</p><pre aria-live="polite">{{ busy() ? 'Consultando el servidor…' : result() }}</pre><p class="hint">Los mensajes proceden de tmwa-admin y pueden aparecer en inglés. Ninguna contraseña de administración se envía al navegador.</p></aside>
+    <aside class="card console"><div class="console-head"><div><p class="eyebrow">RESPUESTA DE TMWA</p><h2>{{ lastAction() }}</h2></div><span class="terminal-dot">● ● ●</span></div><p class="error" role="alert" [hidden]="!error()">{{ error() }}</p><pre aria-live="polite">{{ busy() ? 'Consultando el servidor…' : result() }}</pre><p class="hint">Los mensajes de consulta proceden de tmwa-admin y pueden aparecer en inglés. Las contraseñas de jugador se envían al servicio de este equipo y se borran de los campos al terminar; las respuestas de altas, cambios de contraseña y borrados se ocultan. La contraseña de administración no se envía al navegador.</p></aside>
   </div>
 </main>

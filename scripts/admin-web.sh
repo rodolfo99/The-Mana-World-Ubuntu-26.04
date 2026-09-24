@@ -15,7 +15,10 @@ fi
 [[ -x "$ROOT/instalado/bin/tmwa-admin" ]] || { echo "Ejecuta primero ./scripts/instalar.sh." >&2; exit 1; }
 [[ -f "$ROOT/sources/serverdata/login/conf/ladmin_local.conf" ]] || { echo "Falta la configuración de administración local." >&2; exit 1; }
 cd "$WEB"
-if [[ ! -f "$WEB/dist/admin-web/browser/index.html" ]]; then
+INDEX="$WEB/dist/admin-web/browser/index.html"
+if [[ ! -f "$INDEX" ]] ||
+   find "$WEB/src" "$WEB/angular.json" "$WEB/package.json" "$WEB/package-lock.json" \
+     -type f -newer "$INDEX" -print -quit | grep -q .; then
   npm ci
   npm run build
 fi

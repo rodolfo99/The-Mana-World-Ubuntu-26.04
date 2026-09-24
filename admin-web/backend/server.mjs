@@ -19,11 +19,18 @@ let occupied = false;
 
 export function buildCommand(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Datos inválidos.');
-  const account = () => {
-    if (typeof input.account !== 'string' || !/^[a-zA-Z0-9_.-]{1,23}$/.test(input.account)) {
-      throw new Error('Introduce un nombre de cuenta de hasta 23 caracteres ASCII (letras, números, _, . o -).');
+  const account = (min = 1) => {
+    if (typeof input.account !== 'string' || !/^[a-zA-Z0-9_.-]{1,23}$/.test(input.account) || input.account.length < min) {
+      throw new Error(`Introduce un nombre de cuenta de ${min} a 23 caracteres ASCII (letras, números, _, . o -).`);
     }
     return input.account;
+  };
+  const password = () => {
+    // qsplit() interpreta las comillas como delimitadores y separa por espacios.
+    if (typeof input.password !== 'string' || !/^[\x21-\x7e]{4,23}$/.test(input.password) || /['"]/.test(input.password)) {
+      throw new Error('La contraseña debe tener 4–23 caracteres ASCII sin espacios ni comillas.');
+    }
+    return input.password;
   };
   const integer = (field, min, max) => {
     const value = input[field];
@@ -45,6 +52,23 @@ export function buildCommand(input) {
     case 'gm': return `gm ${account()} ${integer('level', 0, 99)}`;
     case 'block': return `block ${account()}`;
     case 'unblock': return `unblock ${account()}`;
+    case 'add': {
+      const name = account(4);
+      if (!['M', 'F', 'N'].includes(input.sex)) throw new Error('Selecciona M, F o N.');
+      const email = input.email;
+      if (typeof email !== 'string' || email.length < 3 || email.length > 39 ||
+          !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+$/.test(email) ||
+          email.split('@')[1].startsWith('.') || email.endsWith('.') || email.includes('..')) {
+        throw new Error('Introduce un correo válido de hasta 39 caracteres ASCII.');
+      }
+      return `create ${name} ${input.sex} ${email} ${password()}`;
+    }
+    case 'passwd': return `password ${account()} ${password()}`;
+    case 'del': {
+      const name = account();
+      if (input.confirmAccount !== name) throw new Error('Escribe exactamente el nombre de la cuenta para confirmar el borrado.');
+      return `delete ${name}`;
+    }
     case 'kami': {
       if (typeof input.message !== 'string' || input.message.length < 1 ||
           input.message.length > 160 || !/^[\x20-\x7e]+$/.test(input.message)) {
@@ -86,7 +110,7 @@ function readBody(req) {
   });
 }
 
-function execute(command) {
+function execute(command, confirmationAccount = null) {
   return new Promise((done, fail) => {
     const child = spawn(adminScript, [], { cwd: root, stdio: ['pipe', 'pipe', 'pipe'] });
     let output = '';
@@ -102,11 +126,17 @@ function execute(command) {
       child.kill('SIGKILL');
       finish(new Error('tmwa-admin no respondió en 15 segundos.'));
     }, 15000);
+    let confirmed = false;
     const collect = chunk => {
       output += chunk.toString('utf8');
       if (output.length > 262144) {
         child.kill('SIGKILL');
         finish(new Error('Respuesta demasiado larga. Reduce la consulta.'));
+      }
+      if (confirmationAccount && !confirmed &&
+          output.includes(`Are you really sure to DELETE account [${confirmationAccount}]? (y/n) > `)) {
+        confirmed = true;
+        child.stdin.end('y\n');
       }
     };
     child.stdout.on('data', collect);
@@ -114,6 +144,9 @@ function execute(command) {
     child.once('error', error => finish(new Error(`No se pudo iniciar tmwa-admin: ${error.message}`)));
     child.once('close', code => {
       const clean = output.replace(/\x1b\[[0-9;]*m/g, '').trim();
+      if (confirmationAccount && !confirmed) {
+        return finish(new Error('No llegó la confirmación de borrado desde tmwa-admin; no se envió la respuesta afirmativa.'));
+      }
       if (code !== 0 || /Error at login:|Impossible to have a connection|Remote administration has been disconnected/i.test(clean)) {
         finish(new Error('No se pudo conectar con la administración. Comprueba que el servidor está encendido y configurado.'));
       } else if (!clean) {
@@ -121,7 +154,8 @@ function execute(command) {
       } else finish(null, clean);
     });
     child.stdin.on('error', () => {});
-    child.stdin.end(`${command}\n`);
+    if (confirmationAccount) child.stdin.write(`${command}\n`);
+    else child.stdin.end(`${command}\n`);
   });
 }
 
@@ -168,7 +202,14 @@ export function handler(req, res) {
         const input = await readBody(req);
         const command = buildCommand(input);
         if (!existsSync(binary) || !existsSync(config)) throw new Error('Ejecuta primero ./scripts/instalar.sh.');
-        json(res, 200, { output: await execute(command) });
+        const output = await execute(command, input.action === 'del' ? input.account : null);
+        const sensitive = {
+          add: { success: /is successfully created \[id: \d+\]\./, message: 'Cuenta creada correctamente.', error: 'No se pudo crear la cuenta. Comprueba si ya existe.' },
+          passwd: { success: /password successfully changed\./, message: 'Contraseña cambiada correctamente.', error: 'No se pudo cambiar la contraseña. Comprueba que la cuenta existe.' },
+          del: { success: /is successfully DELETED\./, message: 'Cuenta borrada correctamente.', error: 'No se pudo borrar la cuenta. Comprueba que existe.' }
+        }[input.action];
+        if (sensitive && !sensitive.success.test(output)) throw new Error(sensitive.error);
+        json(res, 200, { output: sensitive ? sensitive.message : output });
       } catch (error) {
         if (!res.destroyed) json(res, error.message?.startsWith('tmwa-admin') ? 504 : 400, { error: error.message });
       } finally { occupied = false; }

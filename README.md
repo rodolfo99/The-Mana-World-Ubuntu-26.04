@@ -124,13 +124,14 @@ contraseña adicional: el servicio local usa `tmwa-admin` y su configuración
 privada. Solo escucha en `127.0.0.1` y no está diseñado para publicarse en
 una red ni detrás de un proxy.
 
-El panel permite listar cuentas por rango, consultar niveles GM y jugadores
-en línea, buscar ID y datos de una cuenta, asignar nivel GM, bloquear o
-desbloquear cuentas y enviar avisos globales. Confirma las acciones que
-modifican datos. Los avisos aceptan únicamente caracteres ASCII porque
-`tmwa-admin` rechaza comandos con caracteres de control o no ASCII. Para
-crear cuentas, cambiar contraseñas y otras operaciones usa `./scripts/admin.sh`
-o el registro del cliente. Consulta [la guía del panel](admin-web/README.md).
+El panel permite crear y borrar cuentas, cambiar sus contraseñas, listar
+cuentas por rango, consultar niveles GM y jugadores en línea, buscar ID y
+datos de una cuenta, asignar nivel GM, bloquear o desbloquear cuentas y
+enviar avisos globales. Confirma las acciones que modifican datos y pide
+repetir el nombre antes de borrar una cuenta. Los avisos aceptan únicamente
+caracteres ASCII porque `tmwa-admin` rechaza comandos con caracteres de
+control o no ASCII. Para otras operaciones usa `./scripts/admin.sh`.
+Consulta [la guía del panel](admin-web/README.md).
 
 ## Español
 
