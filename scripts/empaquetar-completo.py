@@ -34,7 +34,7 @@ def include(path: Path) -> bool:
         return False
     if path.name in SKIP_FILES or path.name.endswith(('.pyc', '.log', '.swp', '.tmp')):
         return False
-    if rel.startswith('sources/serverdata/') and ('_local.conf' in path.name or 'local_' in path.name):
+    if rel.startswith('sources/serverdata/') and not path.name.endswith('.example') and ('_local.conf' in path.name or 'local_' in path.name):
         return False
     if any(rel == saved or rel.startswith(saved + '/') for saved in SAVE_DIRS):
         return path.name == '.gitignore' or path.name.endswith('.example')
