@@ -9,6 +9,36 @@ Incluye una primera traducción automática al español de los diálogos de NPC.
 > todavía falta probar la compilación completa y una sesión de juego en
 > Ubuntu 26.04. La traducción de NPC necesita revisión de estilo y contexto.
 
+## Cliente web jugable (v0.2.0)
+
+`game-web/` incorpora un cliente Angular 22 separado del panel administrativo
+`admin-web/`. Se conecta al mismo servidor TMWA por una pasarela local y
+muestra los mapas y gráficos originales del submódulo `client-data`. Incluye
+acceso y registro, personajes, movimiento, chat, diálogos NPC, combate e
+inventario. Consulta [la guía del cliente web](game-web/README.md) para
+funciones, limitaciones, pruebas y seguridad.
+
+Con el servidor instalado y encendido en otra terminal:
+
+```bash
+./scripts/servidor.sh
+./scripts/juego-web.sh
+```
+
+Abre `http://127.0.0.1:3020` en esta computadora. Para generar un ZIP con los
+fuentes, mapas, gráficos, música y metadatos mínimos necesarios para compilar:
+
+```bash
+git submodule update --init --recursive
+python3 scripts/empaquetar-completo.py
+```
+
+El ZIP se crea junto a la carpeta del repositorio y excluye cuentas,
+personajes guardados, claves locales y carpetas de compilación. Extrae el ZIP
+y ejecuta `./scripts/preparar-fuentes.sh`, `./scripts/instalar.sh` y los dos
+comandos de inicio anteriores. Las dependencias de Ubuntu y npm se instalan
+en el equipo donde ejecutes el juego.
+
 ## Obtener el proyecto
 
 Necesitas Git, conexión a Internet y Ubuntu 26.04 x86_64 para ejecutar el

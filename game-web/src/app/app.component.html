@@ -1,0 +1,111 @@
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand"><span class="brand-symbol">✧</span><span>THE <strong>MANA</strong> WORLD</span><small>CLIENTE WEB · LOCAL</small></div>
+    <div class="topbar-status" [class.online]="connected"><span class="status-dot"></span>{{ connected ? 'SERVIDOR CONECTADO' : 'SIN CONEXIÓN' }}</div>
+  </header>
+
+  <main class="game-layout">
+    <section class="game-surface" aria-label="Mundo del juego">
+      <canvas #viewport tabindex="0" (click)="onCanvasClick($event)" aria-label="Mapa interactivo"></canvas>
+      <div class="canvas-scrim" *ngIf="phase !== 'game' || loadingMap"></div>
+
+      <div class="auth-screen" *ngIf="phase === 'login'">
+        <div class="portal-art" aria-hidden="true"><div class="portal-ring"></div><div class="portal-glyph">✦</div></div>
+        <div class="auth-card">
+          <div class="eyebrow">UN MUNDO POR EXPLORAR</div>
+          <h1>Tu aventura<br><em>comienza aquí.</em></h1>
+          <p class="lead">Entra al mundo de Candor desde tu navegador.</p>
+          <div class="segmented" role="tablist" aria-label="Acceso">
+            <button type="button" [class.active]="authMode === 'login'" (click)="authMode = 'login'">Entrar</button>
+            <button type="button" [class.active]="authMode === 'register'" (click)="authMode = 'register'">Crear cuenta</button>
+          </div>
+          <form (ngSubmit)="submitAuth()">
+            <label>USUARIO<input name="username" [(ngModel)]="username" autocomplete="username" maxlength="21" minlength="4" required placeholder="Tu nombre de usuario"></label>
+            <label>CONTRASEÑA<input name="password" [(ngModel)]="password" type="password" [attr.autocomplete]="authMode === 'register' ? 'new-password' : 'current-password'" maxlength="23" minlength="4" required placeholder="Tu contraseña"></label>
+            <label *ngIf="authMode === 'register'">PERSONAJE INICIAL
+              <select name="sex" [(ngModel)]="sex"><option value="M">Masculino</option><option value="F">Femenino</option></select>
+            </label>
+            <button class="button-primary auth-submit" type="submit" [disabled]="busy || username.trim().length < 4 || password.length < 4">
+              {{ busy ? 'Conectando…' : authMode === 'register' ? 'Crear cuenta y continuar →' : 'Entrar al mundo →' }}
+            </button>
+          </form>
+          <p class="auth-note">Tu servidor TMWA debe estar encendido en esta máquina.</p>
+        </div>
+      </div>
+
+      <div class="character-screen" *ngIf="phase === 'characters'">
+        <div class="character-card">
+          <div class="eyebrow">ELIGE TU CAMINO</div>
+          <h1>Tus personajes</h1>
+          <p class="lead">Continúa una aventura o empieza otra.</p>
+          <div class="character-list">
+            <button type="button" class="character-choice" *ngFor="let character of characters" (click)="choose(character)" [disabled]="busy">
+              <span class="character-emblem">✦</span><span class="character-detail"><strong>{{ character.name }}</strong><small>NIVEL {{ character.level }} · ESPACIO {{ character.slot + 1 }}</small></span><span class="choice-arrow">↗</span>
+            </button>
+            <p class="empty-characters" *ngIf="!characters.length">Aún no tienes un personaje. Crea uno para entrar.</p>
+          </div>
+          <form *ngIf="freeSlot !== null" class="character-create" (ngSubmit)="create(freeSlot!)">
+            <label>NUEVO PERSONAJE<input name="characterName" [(ngModel)]="newName" maxlength="23" minlength="4" required placeholder="Escribe su nombre"></label>
+            <button type="submit" class="button-primary" [disabled]="busy || newName.trim().length < 4">Crear personaje →</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="map-loading" *ngIf="loadingMap"><div class="loader-symbol">✧</div>Cargando el mapa y sus recursos…</div>
+
+      <ng-container *ngIf="phase === 'game'">
+        <div class="map-card overlay-panel"><span class="eyebrow">REGIÓN ACTUAL</span><strong>{{ mapName || 'Cargando…' }}</strong><span>COORDENADAS&nbsp; {{ coords.x }}, {{ coords.y }}</span></div>
+        <div class="quick-help overlay-panel">WASD / FLECHAS · CAMINAR <span>·</span> CLIC · INTERACTUAR</div>
+        <div class="target-card overlay-panel" *ngIf="target as enemy">
+          <div><span class="eyebrow">OBJETIVO</span><strong>{{ enemy.name || (enemy.kind === 'monster' ? 'Criatura' : 'Personaje') }}</strong></div>
+          <div class="target-actions"><button *ngIf="enemy.kind === 'monster'" type="button" (click)="attack(enemy.id)">⚔ Atacar</button><button *ngIf="enemy.kind === 'npc'" type="button" (click)="talk(enemy.id)">Hablar</button><button *ngIf="enemy.kind === 'monster'" type="button" (click)="stopAttack()">Detener</button></div>
+        </div>
+        <div class="dialog-backdrop" *ngIf="dialog as npcDialog">
+          <div class="dialog-card"><div class="eyebrow">CONVERSACIÓN</div><p class="dialog-text">{{ npcDialog.text }}</p>
+            <form *ngIf="npcDialog.input" class="dialog-input" (ngSubmit)="submitDialogInput()">
+              <input name="npcAnswer" [(ngModel)]="dialogInput" [type]="npcDialog.input === 'number' ? 'number' : 'text'" [placeholder]="npcDialog.input === 'number' ? 'Escribe una cantidad…' : 'Escribe tu respuesta…'" required>
+              <button type="submit" [disabled]="!dialogInput.trim()">Responder →</button>
+            </form>
+            <div class="dialog-actions"><button type="button" *ngFor="let choice of npcDialog.choices; let index = index" (click)="chooseDialog(index)">{{ choice }}</button>
+              <button type="button" *ngIf="npcDialog.next && !npcDialog.choices.length && !npcDialog.input" (click)="nextDialog()">Continuar →</button>
+              <button type="button" class="subtle" (click)="closeDialog()">Cerrar</button></div></div>
+        </div>
+      </ng-container>
+    </section>
+
+    <aside class="sidebar" *ngIf="phase === 'game'">
+      <section class="sidebar-section player-panel">
+        <div class="eyebrow">AVENTURERO</div>
+        <div class="player-identity"><span class="player-avatar">✧</span><div><strong>{{ selectedCharacter?.name || username }}</strong><small>NIVEL {{ selectedCharacter?.level || 1 }}</small></div></div>
+        <div class="stat-label"><span>VIDA</span><span>{{ selectedCharacter?.hp ?? '—' }} / {{ selectedCharacter?.maxHp ?? '—' }}</span></div>
+        <div class="health-track"><span [style.width.%]="selectedCharacter?.maxHp ? (selectedCharacter!.hp / selectedCharacter!.maxHp) * 100 : 100"></span></div>
+      </section>
+
+      <section class="sidebar-section journal-panel">
+        <div class="section-head"><div><div class="eyebrow">COMUNICACIÓN</div><h2>Diario &amp; chat</h2></div><span class="journal-icon">✉</span></div>
+        <div class="message-list" role="log" aria-live="polite">
+          <p *ngFor="let message of messages" [class.system-message]="message.type === 'system'" [class.error-message]="message.type === 'error'"><strong>{{ message.from }}</strong> {{ message.text }}</p>
+          <p *ngIf="!messages.length" class="muted-message">Las voces del mundo aparecerán aquí.</p>
+        </div>
+        <form class="chat-form" (ngSubmit)="sendChat()"><input #chatInput name="chat" [(ngModel)]="chatText" maxlength="250" placeholder="Enviar mensaje…" aria-label="Mensaje para el chat"><button type="submit" aria-label="Enviar mensaje">↗</button></form>
+      </section>
+
+      <section class="sidebar-section shortcuts-panel">
+        <div class="eyebrow">TUS HERRAMIENTAS</div>
+        <div class="shortcut-buttons"><button type="button" [class.selected]="showInventory" (click)="showInventory = !showInventory"><span>▣</span> Inventario <kbd>I</kbd></button><button type="button" [class.selected]="showHelp" (click)="showHelp = !showHelp"><span>?</span> Controles</button></div>
+      </section>
+
+      <section class="sidebar-section inventory-panel" *ngIf="showInventory">
+        <div class="section-head"><h2>Inventario</h2><button class="close-button" type="button" (click)="showInventory = false" aria-label="Cerrar inventario">×</button></div>
+        <p class="muted-message" *ngIf="!inventory.length">Tu mochila está vacía.</p>
+        <div class="inventory-grid" *ngIf="inventory.length"><div class="item" *ngFor="let item of inventory" [class.equipped]="item.equipped">
+          <div><span class="item-icon">✦</span><span><strong>Objeto {{ item.id }}</strong><small>ESPACIO {{ item.slot }} · ×{{ item.amount }}</small></span></div>
+          <div class="item-actions"><button type="button" (click)="useItem(item)">Usar</button><button type="button" (click)="toggleEquip(item)">{{ item.equipped ? 'Quitar' : 'Equipar' }}</button></div>
+        </div></div>
+      </section>
+
+      <section class="sidebar-section help-panel" *ngIf="showHelp"><h2>Controles</h2><p>Muévete con WASD, las flechas o un clic en el mapa. Haz clic en un PNJ para hablar o en un monstruo para atacar.</p><p>Usa <kbd>Enter</kbd> para escribir, <kbd>I</kbd> para abrir tu mochila y <kbd>Espacio</kbd> para atacar el objetivo.</p></section>
+    </aside>
+  </main>
+  <footer class="footer-status"><span class="footer-diamond">◆</span><span>{{ status }}</span><span class="footer-credit">THE MANA WORLD · RECURSOS ORIGINALES</span></footer>
+</div>

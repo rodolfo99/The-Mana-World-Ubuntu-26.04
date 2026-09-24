@@ -13,7 +13,14 @@ clone_pinned() {
   git -C "$ROOT/$dest" submodule update --init --recursive
 }
 
-if [[ -e "$ROOT/.git" ]]; then
+if [[ -f "$ROOT/.paquete-completo" ]]; then
+  # El ZIP completo ya contiene las revisiones fijadas y los submódulos.
+  for file in "$ROOT/sources/tmwa/src/wire/packets.hpp" \
+              "$ROOT/sources/serverdata/client-data/maps/029-2.tmx" \
+              "$ROOT/sources/mana/libs/guichan/CMakeLists.txt"; do
+    [[ -f "$file" ]] || { echo "ZIP incompleto: falta $file" >&2; exit 1; }
+  done
+elif [[ -e "$ROOT/.git" ]]; then
   git -C "$ROOT" submodule update --init --recursive
 else
   clone_pinned sources/tmwa https://github.com/themanaworld/tmwa.git fe83504049c2414bb0df12574a447cd63c162c96
