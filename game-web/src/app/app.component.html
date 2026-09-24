@@ -70,7 +70,7 @@
             </form>
             <div class="dialog-actions"><ng-container *ngFor="let choice of npcDialog.choices; let index = index"><button type="button" *ngIf="choice.trim()" (click)="chooseDialog(index)">{{ choice }}</button></ng-container>
               <button type="button" *ngIf="npcDialog.next && !npcDialog.choices.length && !npcDialog.input" (click)="nextDialog()">Continuar →</button>
-              <button type="button" class="subtle" (click)="closeDialog()">Cerrar</button></div></div>
+              <button type="button" class="subtle" *ngIf="npcDialog.close || npcDialog.choices.length" (click)="closeDialog()">{{ npcDialog.close ? 'Cerrar' : 'Cancelar conversación' }}</button></div></div>
         </div>
       </ng-container>
     </section>
@@ -109,5 +109,5 @@
       <section class="sidebar-section help-panel" *ngIf="showHelp"><h2>Controles</h2><p>Muévete con WASD, las flechas o un clic en el mapa. Haz clic en un PNJ para hablar o en un monstruo para atacar.</p><p>Usa <kbd>Enter</kbd> para escribir, <kbd>I</kbd> para abrir tu mochila y <kbd>Espacio</kbd> para atacar el objetivo.</p></section>
     </aside>
   </main>
-  <footer class="footer-status"><span class="footer-diamond">◆</span><span>{{ status }}</span><span class="footer-credit">THE MANA WORLD · RECURSOS ORIGINALES</span></footer>
+  <footer class="footer-status"><span class="footer-diamond">◆</span><span>{{ status }}</span><span class="footer-credit">THE MANA WORLD · WEB 0.2.3</span></footer>
 </div>

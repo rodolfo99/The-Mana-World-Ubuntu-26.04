@@ -1,0 +1,13 @@
+diff --git a/world/map/npc/functions/default_npc_checks.txt b/world/map/npc/functions/default_npc_checks.txt
+--- a/world/map/npc/functions/default_npc_checks.txt
++++ b/world/map/npc/functions/default_npc_checks.txt
+@@ -24,3 +24,3 @@
+     if(@dnpc_name$ != "") goto L_Named;
+-    message strcharinfo(0), "Server : ##BYou need to move closer to interact with this npc.";
++    message strcharinfo(0), "Servidor : ##BAcércate para hablar con este personaje.";
+     goto L_Return;
+@@ -28,3 +28,3 @@
+ L_Named:
+-    message strcharinfo(0), ""+@dnpc_name$+" : ##BPlease move closer.";
++    message strcharinfo(0), ""+@dnpc_name$+" : ##BAcércate, por favor.";
+     goto L_Return;

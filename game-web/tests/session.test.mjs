@@ -170,6 +170,14 @@ test('real TCP login, registration, character creation, map, movement and play c
     equipment.writeUInt16LE(0, 12); // actually unequipped
     socket.write(Buffer.concat([mob, npc, inventory, equipment]));
 
+    const nameRequest = await reader.bytes(6);
+    assert.equal(nameRequest.readUInt16LE(0), 0x0094);
+    assert.equal(nameRequest.readUInt32LE(2), 5200);
+    const npcName = packet(0x0095, 30);
+    npcName.writeUInt32LE(5200, 2);
+    fixedText(npcName, 6, 'Sorfina');
+    socket.write(npcName);
+
     const walk = await reader.bytes(5);
     assert.equal(walk.readUInt16LE(0), 0x0085);
     assert.equal(((walk[2] << 8) | (walk[3] & 0xc0)) >> 6, 12);
@@ -224,6 +232,18 @@ test('real TCP login, registration, character creation, map, movement and play c
     assert.equal(answer.readUInt16LE(0), 0x01d5);
     assert.equal(answer.readUInt32LE(4), 5200);
     assert.equal(answer.subarray(8).toString('utf8').replace(/\0$/, ''), 'sí');
+
+    // A TMWA close2 script remains suspended until the client acknowledges B6.
+    const closeButton = packet(0x00b6, 6);
+    closeButton.writeUInt32LE(5200, 2);
+    socket.write(closeButton);
+    const closeAck = await reader.bytes(6);
+    assert.equal(closeAck.readUInt16LE(0), 0x0146);
+    assert.equal(closeAck.readUInt32LE(2), 5200);
+    const resumedWalk = await reader.bytes(5);
+    assert.equal(resumedWalk.readUInt16LE(0), 0x0085);
+    pos2(walking, 6, 12, 21, 13, 21);
+    socket.write(walking);
 
     const attack = await reader.bytes(7);
     assert.equal(attack.readUInt16LE(0), 0x0089);
@@ -351,6 +371,7 @@ test('real TCP login, registration, character creation, map, movement and play c
   assert.deepEqual([world.map, world.x, world.y, world.name], ['001-1', 10, 20, 'Aria']);
   session.command({ type: 'loaded' });
   assert.deepEqual([(await ws.wait('entity', m => m.id === 5100)).kind, (await ws.wait('entity', m => m.id === 5200)).kind], ['monster', 'npc']);
+  assert.equal((await ws.wait('entity', m => m.name === 'Sorfina')).id, 5200);
   assert.equal((await ws.wait('inventory')).items[0].amount, 3);
   const initialEquipment = await ws.wait('inventory', m => m.items.some(item => item.id === 600));
   assert.equal(initialEquipment.items.find(item => item.id === 600).equipped, false);
@@ -369,6 +390,10 @@ test('real TCP login, registration, character creation, map, movement and play c
   session.command({ type: 'npcInput', id: 5200, value: 7 });
   await ws.wait('dialog', m => m.input === 'text');
   session.command({ type: 'npcInput', id: 5200, value: 'sí' });
+  await ws.wait('dialog', m => m.close === true);
+  session.command({ type: 'closeNpc', id: 5200 });
+  session.command({ type: 'walk', x: 13, y: 21 });
+  await ws.wait('position', m => m.x === 13);
   session.command({ type: 'attack', id: 5100 });
   assert.equal((await ws.wait('hit')).damage, 9);
   session.command({ type: 'use', slot: 0 });
@@ -389,4 +414,48 @@ test('real TCP login, registration, character creation, map, movement and play c
   // 0x0087 contains both origin and destination; show the destination.
   assert.equal(walkResponse.readUInt16LE(0), 0x0087);
   assert.deepEqual([position.x, position.y], [12, 21]);
+});
+
+test('NPC cancellation, forced close, clear and movement corrections match the native protocol', () => {
+  const ws = new FakeWebSocket();
+  const sent = [];
+  const session = new GameSession(ws, lengths);
+  session.phase = 'map';
+  session.token = { account: 42 };
+  session.socket = { writable: true, write: p => sent.push(Buffer.from(p)), destroy() {} };
+  const menu = packet(0x00b7, 14);
+  menu.writeUInt16LE(menu.length, 2);
+  menu.writeUInt32LE(5200, 4);
+  menu.write('Sí:', 8);
+  session.receive(0x00b7, menu);
+  session.command({ type: 'closeNpc', id: 5200 });
+  assert.equal(sent.at(-1).readUInt16LE(0), 0x00b8);
+  assert.equal(sent.at(-1)[6], 255); // TMWA builtin_menu's only abort value.
+  assert.equal(session.npc, 0);
+
+  const command = packet(0x0212, 16);
+  command.writeUInt32LE(5300, 2);
+  command.writeUInt16LE(9, 6);
+  session.receive(0x0212, command);
+  assert.deepEqual(ws.messages.at(-1), { type: 'dialog', id: 5300, clear: true });
+  command.writeUInt16LE(5, 6);
+  session.receive(0x0212, command);
+  assert.equal(sent.at(-1).readUInt16LE(0), 0x0146);
+  assert.equal(sent.at(-1).readUInt32LE(2), 5300);
+  assert.deepEqual(ws.messages.at(-1), { type: 'dialog', id: 5300, closed: true });
+
+  const input = packet(0x0142, 6);
+  input.writeUInt32LE(5400, 2);
+  session.receive(0x0142, input);
+  assert.throws(() => session.command({ type: 'closeNpc', id: 5400 }), /Completa la respuesta/);
+
+  const stop = packet(0x0088, 10);
+  stop.writeUInt32LE(5100, 2);
+  stop.writeUInt16LE(30, 6);
+  stop.writeUInt16LE(20, 8);
+  session.receive(0x0088, stop);
+  assert.deepEqual(ws.messages.at(-1), { type: 'entity', id: 5100, x: 30, y: 20 });
+  stop.writeUInt32LE(42, 2);
+  session.receive(0x0088, stop);
+  assert.deepEqual(ws.messages.at(-1), { type: 'position', id: 42, x: 30, y: 20 });
 });

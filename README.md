@@ -9,7 +9,7 @@ Incluye una primera traducción automática al español de los diálogos de NPC.
 > todavía falta probar la compilación completa y una sesión de juego en
 > Ubuntu 26.04. La traducción de NPC necesita revisión de estilo y contexto.
 
-## Cliente web jugable (v0.2.2)
+## Cliente web jugable (v0.2.3)
 
 `game-web/` incorpora un cliente Angular 22 separado del panel administrativo
 `admin-web/`. Se conecta al mismo servidor TMWA por una pasarela local y
@@ -17,6 +17,14 @@ muestra los mapas y gráficos originales del submódulo `client-data`. Incluye
 acceso y registro, personajes, movimiento, chat, diálogos NPC, combate e
 inventario. Consulta [la guía del cliente web](game-web/README.md) para
 funciones, limitaciones, pruebas y seguridad.
+
+La versión 0.2.3 corrige el cierre y la cancelación de diálogos que podían
+dejar al servidor esperando una respuesta, conserva todas las líneas de cada
+página y distingue las correcciones de posición del jugador de las de otros
+personajes. El cliente avisa al intentar caminar contra un obstáculo.
+El ZIP mantiene los 424 scripts NPC traducidos y añade los avisos de proximidad
+en español. Sigue [la actualización a 0.2.3](game-web/README.md#actualizar-a-023-movimiento-y-diálogos-npc)
+desde la carpeta donde ya tienes tus cuentas.
 
 La versión 0.2.1 corrige la pantalla detenida en **«Conectando…»**: las
 respuestas WebSocket y la carga de mapas notifican sus cambios a Angular 22.

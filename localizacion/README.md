@@ -29,6 +29,13 @@ archivo, y los scripts de instalación y arranque del servidor lo verifican
 de nuevo. Esto corrige los ZIP 0.2.0/0.2.1, cuyos scripts NPC originales
 permanecían en inglés hasta ejecutar la preparación.
 
+La versión 0.2.3 añade `npc-interaccion-es.patch`, que traduce los dos avisos
+de proximidad conservando sus variables y marcadores de formato. Se aplica
+junto al parche principal y también se comprueba al iniciar la web.
+El ZIP lleva ambos parches aplicados. Reinicia el servidor desde la misma
+carpeta que la web para cargar esos diálogos; traducir los archivos no cambia
+los textos de un proceso TMWA que ya estaba abierto.
+
 Para recuperar únicamente el español de una instalación existente:
 
 ```bash

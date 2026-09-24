@@ -54,6 +54,10 @@ class PrepareTranslation(unittest.TestCase):
             (self.root / 'localizacion' / f'{name}.gz.b64.part-000').write_bytes(encoded)
             checksums.append(f'{hashlib.sha256(data).hexdigest()}  {name}\n')
         (self.root / 'localizacion/SHA256SUMS').write_text(''.join(checksums))
+        self.distance = self.npc.parent / 'distance.txt'
+        self.distance.write_text('message "Move closer";\n')
+        (self.root / 'localizacion/npc-interaccion-es.patch').write_text(
+            patch('world/map/npc/distance.txt', 'message "Move closer";', 'message "Acércate";'))
         self.account = self.root / 'sources/serverdata/login/save/account.txt'
         self.account.parent.mkdir(parents=True)
         self.account.write_text('cuenta y progreso de prueba\n')
@@ -66,6 +70,7 @@ class PrepareTranslation(unittest.TestCase):
         first = self.run_helper()
         self.assertEqual(first.returncode, 0, first.stderr)
         self.assertEqual(self.npc.read_text(), 'mes "Hola";\n')
+        self.assertEqual(self.distance.read_text(), 'message "Acércate";\n')
         second = self.run_helper()
         self.assertEqual(second.returncode, 0, second.stderr)
         self.assertEqual(self.npc.read_text(), 'mes "Hola";\n')
@@ -86,6 +91,13 @@ class PrepareTranslation(unittest.TestCase):
         result = self.run_helper()
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(catalog.read_text(), custom)
+        self.assertEqual(self.npc.read_text(), 'mes "Hello";\n')
+
+    def test_extra_patch_conflict_preserves_both_files(self):
+        self.distance.write_text('message "Aviso personal";\n')
+        result = self.run_helper()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.distance.read_text(), 'message "Aviso personal";\n')
         self.assertEqual(self.npc.read_text(), 'mes "Hello";\n')
 
 

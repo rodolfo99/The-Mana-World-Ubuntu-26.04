@@ -39,6 +39,7 @@ export class GameSession {
     this.character = null;
     this.map = '';
     this.npc = 0;
+    this.npcMode = null;
     this.inventory = new Map();
     this.names = new Set();
     this.replyTimeoutMs = replyTimeoutMs;
@@ -212,11 +213,16 @@ export class GameSession {
           this.send(p);
         } else throw new Error('NPC no solicita entrada');
         this.npcInput = null;
-      } else if (type === 'choice') {
+      } else if (type === 'choice' || type === 'closeNpc' && this.npcMode === 'choice') {
         const p = idPacket(0x00b8, id, 7);
-        p[6] = validInt(raw.index, 1, 254);
+        // TMWA cancels a menu only with entry 255, not with the close ACK.
+        p[6] = type === 'closeNpc' ? 255 : validInt(raw.index, 1, 254);
         this.send(p);
-      } else this.send(idPacket(type === 'next' ? 0x00b9 : 0x0146, id));
+      } else {
+        if (type === 'closeNpc' && this.npcMode !== 'close') throw new Error('Completa la respuesta del NPC antes de cerrar.');
+        this.send(idPacket(type === 'next' ? 0x00b9 : 0x0146, id));
+      }
+      this.npcMode = null;
       if (type === 'closeNpc') this.npc = 0;
       return;
     }
@@ -293,7 +299,12 @@ export class GameSession {
       return;
     }
     if (id === 0x0087 && this.phase === 'map') { this.emit({ type: 'position', ...destinationAt(p, 6) }); return; }
-    if (id === 0x0088 && this.phase === 'map') { this.emit({ type: 'position', x: p.readUInt16LE(6), y: p.readUInt16LE(8) }); return; }
+    if (id === 0x0088 && this.phase === 'map') {
+      const entityId = p.readUInt32LE(2);
+      this.emit({ type: entityId === this.token.account ? 'position' : 'entity',
+        id: entityId, x: p.readUInt16LE(6), y: p.readUInt16LE(8) });
+      return;
+    }
     if (id === 0x0078 || id === 0x007b || id === 0x01d8 || id === 0x01d9 || id === 0x01da) {
       const entityId = p.readUInt32LE(2);
       const job = p.readUInt16LE(14);
@@ -303,7 +314,7 @@ export class GameSession {
       const kind = job >= 1000 ? 'monster' : job >= 40 ? 'npc' : 'player';
       this.emit({ type: 'entity', id: entityId, kind, job, ...coords,
         ...(id === 0x0078 || id === 0x007b ? { hp: p.readUInt32LE(id === 0x007b ? 36 : 32), maxHp: p.readUInt32LE(id === 0x007b ? 40 : 36) } : {}) });
-      if (kind === 'player' && !this.names.has(entityId)) {
+      if ((kind === 'player' || kind === 'npc') && !this.names.has(entityId)) {
         this.names.add(entityId);
         this.send(idPacket(0x0094, entityId));
       }
@@ -323,6 +334,7 @@ export class GameSession {
     if (id === 0x00b4 || id === 0x00b7 || id === 0x00b5 || id === 0x00b6) {
       const npcId = p.readUInt32LE(id === 0x00b4 || id === 0x00b7 ? 4 : 2);
       this.npc = npcId;
+      this.npcMode = id === 0x00b7 ? 'choice' : id === 0x00b6 ? 'close' : id === 0x00b5 ? 'next' : null;
       const text = id === 0x00b4 || id === 0x00b7 ? textAt(p, 8, p.length - 8) : undefined;
       this.emit({ type: 'dialog', id: npcId, ...(id === 0x00b7 ? { choices: text.split(':') } : {}),
         ...(id === 0x00b4 ? { text } : {}), next: id === 0x00b5, close: id === 0x00b6 });
@@ -331,7 +343,18 @@ export class GameSession {
     if (id === 0x0142 || id === 0x01d4) {
       this.npc = p.readUInt32LE(2);
       this.npcInput = id === 0x0142 ? 'number' : 'text';
+      this.npcMode = this.npcInput;
       this.emit({ type: 'dialog', id: this.npc, input: this.npcInput });
+      return;
+    }
+    if (id === 0x0212) {
+      const npcId = p.readUInt32LE(2), command = p.readUInt16LE(6);
+      if (command === 5) {
+        // close2 without preceding text also waits for this ACK.
+        this.send(idPacket(0x0146, npcId));
+        if (this.npc === npcId) { this.npc = 0; this.npcMode = null; this.npcInput = null; }
+        this.emit({ type: 'dialog', id: npcId, closed: true });
+      } else if (command === 9) this.emit({ type: 'dialog', id: npcId, clear: true });
       return;
     }
     if (id === 0x008a) { this.emit({ type: 'hit', source: p.readUInt32LE(2), target: p.readUInt32LE(6), damage: p.readUInt16LE(22) }); return; }

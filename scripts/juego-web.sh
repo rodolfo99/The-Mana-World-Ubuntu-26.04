@@ -14,6 +14,9 @@ if ! node -e 'const [major,minor,patch]=process.versions.node.split(".").map(Num
 fi
 [[ -f "$ROOT/sources/mana/src/net/tmwa/network.cpp" ]] || { echo "Ejecuta ./scripts/preparar-fuentes.sh antes del cliente web." >&2; exit 1; }
 [[ -f "$ROOT/sources/serverdata/client-data/graphics/sprites/races/human-male.png" ]] || { echo "Faltan recursos: git submodule update --init --recursive" >&2; exit 1; }
+"$ROOT/scripts/preparar-traduccion.sh" --npc
+echo "Datos NPC en español: $ROOT/sources/serverdata"
+echo "Si TMWA ya estaba encendido antes de traducir, reinicia scripts/servidor.sh desde esta misma carpeta."
 cd "$WEB"
 INDEX="$WEB/dist/game-web/browser/index.html"
 if [[ ! -f "$INDEX" ]] ||

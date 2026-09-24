@@ -45,6 +45,9 @@ if [[ "$MODE" != --cliente ]]; then
   unpack_verified npc-es.patch
   unpack_verified npc_es.json
   check_patch "$ROOT/sources/serverdata" "$ROOT/localizacion/npc-es.patch"
+  if [[ -f "$ROOT/localizacion/npc-interaccion-es.patch" ]]; then
+    check_patch "$ROOT/sources/serverdata" "$ROOT/localizacion/npc-interaccion-es.patch"
+  fi
 fi
 if [[ "$MODE" != --npc ]]; then
   check_patch "$ROOT/sources/mana" "$ROOT/patches/mana-po.patch"

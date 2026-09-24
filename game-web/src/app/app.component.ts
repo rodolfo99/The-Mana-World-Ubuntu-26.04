@@ -6,7 +6,7 @@ import { GameEntity, WorldRenderer } from './world-renderer';
 interface Character { id: number; name: string; slot: number; level: number; hp: number; maxHp: number; sex: string }
 interface Item { slot: number; id: number; amount: number; equipped?: boolean }
 interface Message { from: string; text: string; type: 'system' | 'player' | 'error' }
-interface Dialog { id: number; text: string; choices: string[]; next: boolean; input?: 'number' | 'text' }
+interface Dialog { id: number; text: string; choices: string[]; next: boolean; close: boolean; input?: 'number' | 'text' }
 
 @Component({
   selector: 'app-root',
@@ -152,13 +152,20 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         break;
       case 'dialog': {
         const id = Number(event['id']);
-        if (event['close']) {
-          this.dialog = undefined;
+        if (event['closed']) {
+          if (this.dialog?.id === id) this.dialog = undefined;
+        } else if (event['clear']) {
+          if (this.dialog?.id === id) this.dialog.text = '';
+        } else if (event['close'] && this.dialog?.id !== id) {
+          // A close request without a visible page still needs its ACK.
+          this.send({ type: 'closeNpc', id });
         } else {
-          this.dialog = { id, text: typeof event['text'] === 'string' ? event['text'] :
-            this.dialog?.id === id ? this.dialog.text : '',
+          const previous = this.dialog?.id === id ? this.dialog.text : '';
+          const line = typeof event['text'] === 'string' ? event['text'] : undefined;
+          this.dialog = { id, text: line === undefined ? previous : previous ? `${previous}\n${line}` : line,
             choices: Array.isArray(event['choices']) ? event['choices'].map(String) : [],
             next: Boolean(event['next']),
+            close: Boolean(event['close']),
             input: event['input'] === 'number' || event['input'] === 'text' ? event['input'] : undefined };
           if (event['input']) this.dialogInput = '';
         }
@@ -277,7 +284,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     if (performance.now() - this.keyDelay < 135) return;
     this.keyDelay = performance.now();
     const tile = this.renderer?.moveDirection(...delta);
-    if (tile) this.send({ type: 'walk', ...tile });
+    if (tile) {
+      this.send({ type: 'walk', ...tile });
+      this.status = `Destino: ${tile.x}, ${tile.y}.`;
+    } else this.status = 'Esa casilla no es transitable. Prueba otra dirección.';
   }
 
   sendChat(): void {
@@ -290,18 +300,32 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   talk(id: number): void { this.send({ type: 'talk', id }); }
   attack(id: number): void { this.renderer?.attack(); this.send({ type: 'attack', id }); }
   stopAttack(): void { this.send({ type: 'stopAttack' }); this.renderer?.select(null); this.target = undefined; }
-  nextDialog(): void { if (this.dialog) this.send({ type: 'next', id: this.dialog.id }); }
-  chooseDialog(index: number): void { if (this.dialog) this.send({ type: 'choice', id: this.dialog.id, index: index + 1 }); }
+  nextDialog(): void {
+    if (!this.dialog?.next) return;
+    this.send({ type: 'next', id: this.dialog.id });
+    this.waitForDialog();
+  }
+  chooseDialog(index: number): void {
+    if (!this.dialog?.choices[index]?.trim()) return;
+    this.send({ type: 'choice', id: this.dialog.id, index: index + 1 });
+    this.waitForDialog();
+  }
+  private waitForDialog(): void {
+    if (this.dialog) this.dialog = { id: this.dialog.id, text: '', choices: [], next: false, close: false };
+  }
   submitDialogInput(): void {
     if (!this.dialog?.input || !this.dialogInput.trim()) return;
     const value = this.dialog.input === 'number' ? Number(this.dialogInput) : this.dialogInput.trim();
     if (typeof value === 'number' && !Number.isFinite(value)) return;
     this.send({ type: 'npcInput', id: this.dialog.id, value });
     this.dialogInput = '';
+    this.waitForDialog();
   }
   closeDialog(): void {
-    if (this.dialog) this.send({ type: 'closeNpc', id: this.dialog.id });
+    if (!this.dialog || !this.dialog.close && !this.dialog.choices.length) return;
+    this.send({ type: 'closeNpc', id: this.dialog.id });
     this.dialog = undefined;
+    this.viewport.nativeElement.focus({ preventScroll: true });
   }
   useItem(item: Item): void { this.send({ type: 'use', slot: item.slot }); }
   toggleEquip(item: Item): void { this.send({ type: item.equipped ? 'unequip' : 'equip', slot: item.slot }); }
