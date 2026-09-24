@@ -1,4 +1,4 @@
-# Cliente jugable Angular para The Mana World (v0.2.3)
+# Cliente jugable Angular para The Mana World (v0.2.4)
 
 Esta aplicación es independiente de `admin-web/`. Conserva el servidor TMWA
 y los datos del mundo de este repositorio; un servicio Node local convierte
@@ -37,6 +37,39 @@ instala dependencias con `npm ci` y compila Angular. El servidor TMWA usa
 con `GAME_WEB_PORT=3021 ./scripts/juego-web.sh` si 3020 está ocupado.
 Node.js compatible: 22.22.3+, 24.15+ o 26+.
 
+## Actualizar a 0.2.4: velocidad del ratón
+
+El cliente colocaba al personaje en el destino al recibir la aceptación de
+caminar (`0x0087`), aunque TMWA apenas comenzaba el recorrido. Ahora conserva
+el origen y el destino, reconstruye la ruta con las colisiones del mapa y
+anima tanto al personaje como a la cámara. Usa el retraso por casilla que
+envía TMWA (`0x00b0`, `SP::SPEED`): 150 ms por defecto y 1,4 veces ese valor
+en diagonal. Los clics consecutivos y las flechas conservan el avance; las
+correcciones de posición y los traslados cancelan la caminata anterior.
+
+Detén **el cliente web** con `Ctrl+C`. Desde la carpeta de tu instalación
+actual, ejecuta:
+
+```bash
+git fetch origin main
+git restore --source=origin/main -- game-web scripts localizacion README.md
+./scripts/juego-web.sh
+```
+
+Recarga http://127.0.0.1:3020 con `Ctrl+Shift+R` y comprueba que el pie indique
+`WEB 0.2.4`. No requiere recompilar TMWA. Estos comandos conservan las cuentas
+y personajes de `sources/serverdata`; guarda antes tus modificaciones propias
+en las rutas que se actualizan. Si todavía usabas datos NPC en inglés de una
+versión anterior, reinicia también `./scripts/servidor.sh` desde esa misma
+carpeta para que lea los diálogos traducidos.
+
+La primera puerta del tutorial sigue las condiciones del servidor: termina
+las indicaciones de Sorfina o confirma que quieres omitir el tutorial. La
+salida `(44,31)` de `029-2` lleva a otra habitación del **mismo mapa**, en
+`(112,85)`; por eso el identificador del mapa permanece igual. Tras completar
+la parte de Tanisha, la salida `(114,93)` lleva al exterior `029-1`, en
+`(32,100)`.
+
 ## Actualizar a 0.2.3: movimiento y diálogos NPC
 
 Detén el servidor y la web con `Ctrl+C` en sus terminales. Desde **la carpeta
@@ -56,7 +89,7 @@ En otra terminal de **esa misma carpeta**:
 ```
 
 Abre http://127.0.0.1:3020 y recarga con `Ctrl+Shift+R`. El pie muestra
-`WEB 0.2.3`. El arranque web comprueba también los parches NPC e indica la
+`WEB 0.2.4` al actualizar desde el `main` actual. El arranque web comprueba también los parches NPC e indica la
 carpeta de datos. Es necesario reiniciar TMWA: los diálogos se cargan en
 memoria al arrancar. Si sigues ejecutando el servidor desde otra copia,
 seguirá utilizando sus propios NPC y cuentas.
@@ -146,7 +179,7 @@ Recarga `http://127.0.0.1:3020` con `Ctrl+Shift+R`. El servidor TMWA puede
 seguir encendido; no hace falta repetir la instalación de sus binarios.
 
 El ZIP completo 0.2.0 incluía metadatos Git, por lo que también admite esos
-comandos. Si obtuviste una copia sin Git, utiliza el ZIP completo 0.2.3.
+comandos. Si obtuviste una copia sin Git, utiliza el ZIP completo 0.2.4.
 
 La causa corregida era la actualización de la interfaz: Angular 22 utiliza
 por defecto detección de cambios sin Zone.js y estrategia OnPush. Los eventos
@@ -167,7 +200,7 @@ personajes, creación, selección y entrada al mapa tienen un límite de 15 segu
 | Acceso y registro | Inicia sesión o crea cuenta usando la convención `_M`/`_F` de Mana. |
 | Personajes | Elige uno existente o crea uno con los seis atributos iniciales en 5. |
 | Mundo | Carga el mapa real del servidor y sus capas, muestra jugadores, NPC y criaturas. |
-| Movimiento | WASD, flechas o clic; las coordenadas se envían a TMWA. |
+| Movimiento | WASD, flechas o clic; recorre las casillas a la velocidad indicada por TMWA. |
 | Chat | Mensajes del mapa recibidos y enviados al servidor. |
 | NPC | Hablar, continuar, elegir opción y responder texto o número. |
 | Combate | Seleccionar monstruo, atacar y detener ataque; TMWA decide el resultado. |
@@ -185,6 +218,8 @@ fuera de esta versión.
 
 - `src/`: interfaz Angular y renderizador Canvas 2D. Carga `/assets/maps/*.tmx`,
   `/assets/tilesets/*.tsx` y las imágenes con el mismo origen.
+- `src/app/movement.ts`: rutas entre casillas transitables y animación continua
+  según la velocidad del servidor, con conservación del avance al cambiar destino.
 - `backend/server.mjs`: servidor HTTP y WebSocket **solo en 127.0.0.1**; sirve
   una lista cerrada de tipos de archivo desde `client-data`. Rechaza orígenes
   y destinos TCP que no correspondan a esta instalación local.
@@ -226,10 +261,12 @@ de acceso y desconexión. Usa respuestas simuladas y carga el mapa original
 El navegador puede indicarse con `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` y el
 puerto de pruebas con `GAME_WEB_TEST_PORT` (31320 por defecto).
 
-Validación de 0.2.3: nueve pruebas del protocolo/pasarela, diez de navegador
-y cuatro del preparador de español. Se comprueban el ACK de `close2`, la
-cancelación de menús, el movimiento después de cerrar, la salida de la cama
-con flechas y ratón, y que escribir en el chat no mueva al personaje.
+Validación de 0.2.4: quince pruebas de protocolo, pasarela y movimiento, doce
+de navegador y cuatro del preparador de español. Se comprueban la velocidad
+por casilla, las diagonales y colisiones, los clics consecutivos y las flechas,
+el traslado entre habitaciones de `029-2` y a `029-1`, el ACK de `close2`, la
+cancelación de menús, la salida de la cama y que escribir en el chat no mueva
+al personaje.
 Las pruebas de español verifican repetición,
 metadatos Git de submódulos y conservación de cuentas y cambios personales:
 

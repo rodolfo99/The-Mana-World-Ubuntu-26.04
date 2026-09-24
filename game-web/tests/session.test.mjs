@@ -377,7 +377,7 @@ test('real TCP login, registration, character creation, map, movement and play c
   assert.equal(initialEquipment.items.find(item => item.id === 600).equipped, false);
 
   session.command({ type: 'walk', x: 12, y: 21 });
-  const position = await ws.wait('position');
+  const movement = await ws.wait('walk');
   session.command({ type: 'say', text: 'Hola, mundo' });
   assert.equal((await ws.wait('chat')).text, 'Hola');
   session.command({ type: 'talk', id: 5200 });
@@ -393,7 +393,7 @@ test('real TCP login, registration, character creation, map, movement and play c
   await ws.wait('dialog', m => m.close === true);
   session.command({ type: 'closeNpc', id: 5200 });
   session.command({ type: 'walk', x: 13, y: 21 });
-  await ws.wait('position', m => m.x === 13);
+  await ws.wait('walk', m => m.to.x === 13);
   session.command({ type: 'attack', id: 5100 });
   assert.equal((await ws.wait('hit')).damage, 9);
   session.command({ type: 'use', slot: 0 });
@@ -411,9 +411,9 @@ test('real TCP login, registration, character creation, map, movement and play c
   session.command({ type: 'pickup', id: 5700 });
   await Promise.all(tasks);
 
-  // 0x0087 contains both origin and destination; show the destination.
+  // 0x0087 starts a route; its destination is not the current position.
   assert.equal(walkResponse.readUInt16LE(0), 0x0087);
-  assert.deepEqual([position.x, position.y], [12, 21]);
+  assert.deepEqual(movement, { type: 'walk', from: { x: 10, y: 20 }, to: { x: 12, y: 21 }, stepMs: 150 });
 });
 
 test('NPC cancellation, forced close, clear and movement corrections match the native protocol', () => {
@@ -458,4 +458,20 @@ test('NPC cancellation, forced close, clear and movement corrections match the n
   stop.writeUInt32LE(42, 2);
   session.receive(0x0088, stop);
   assert.deepEqual(ws.messages.at(-1), { type: 'position', id: 42, x: 30, y: 20 });
+});
+
+test('walk acknowledgements keep their origin and use TMWA speed status updates', () => {
+  const ws = new FakeWebSocket();
+  const session = new GameSession(ws, lengths);
+  session.phase = 'map';
+  const speed = packet(0x00b0, 8);
+  speed.writeUInt16LE(0, 2); // SP::SPEED is milliseconds per tile.
+  speed.writeUInt32LE(280, 4);
+  session.receive(0x00b0, speed);
+  assert.deepEqual(ws.messages.at(-1), { type: 'walkSpeed', stepMs: 280 });
+  const walking = packet(0x0087, 12);
+  pos2(walking, 6, 22, 24, 40, 30);
+  session.receive(0x0087, walking);
+  assert.deepEqual(ws.messages.at(-1), { type: 'walk', from: { x: 22, y: 24 }, to: { x: 40, y: 30 }, stepMs: 280 });
+  assert.equal(ws.messages.some(event => event.type === 'position'), false);
 });

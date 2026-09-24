@@ -51,7 +51,12 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   constructor(private readonly zone: NgZone, private readonly changes: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
-    try { this.renderer = this.zone.runOutsideAngular(() => new WorldRenderer(this.viewport.nativeElement)); }
+    try {
+      this.renderer = this.zone.runOutsideAngular(() => new WorldRenderer(this.viewport.nativeElement, tile => {
+        this.coords = tile;
+        this.changes.markForCheck();
+      }));
+    }
     catch (error) { this.status = this.errorText(error); }
   }
 
@@ -138,6 +143,17 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       case 'position':
         this.coords = { x: Number(event['x']), y: Number(event['y']) };
         this.renderer?.setPosition(this.coords.x, this.coords.y);
+        break;
+      case 'walk': {
+        const from = event['from'] as { x: number; y: number };
+        const to = event['to'] as { x: number; y: number };
+        if (from && to && !this.renderer?.walk(from, to, Number(event['stepMs']))) {
+          this.status = 'El recorrido recibido no coincide con las casillas transitables del mapa.';
+        }
+        break;
+      }
+      case 'walkSpeed':
+        this.renderer?.setWalkSpeed(Number(event['stepMs']));
         break;
       case 'entity':
         this.renderer?.setEntity(event as unknown as Pick<GameEntity, 'id'> & Partial<GameEntity>);

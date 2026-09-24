@@ -40,6 +40,7 @@ export class GameSession {
     this.map = '';
     this.npc = 0;
     this.npcMode = null;
+    this.walkStepMs = 150; // TMWA DEFAULT_WALK_SPEED: delay per orthogonal tile.
     this.inventory = new Map();
     this.names = new Set();
     this.replyTimeoutMs = replyTimeoutMs;
@@ -298,7 +299,19 @@ export class GameSession {
       this.emit({ type: 'world', map: this.map, x: p.readUInt16LE(18), y: p.readUInt16LE(20), id: this.token.account, name: this.character.name });
       return;
     }
-    if (id === 0x0087 && this.phase === 'map') { this.emit({ type: 'position', ...destinationAt(p, 6) }); return; }
+    if (id === 0x00b0 && p.readUInt16LE(2) === 0) {
+      const stepMs = p.readUInt32LE(4);
+      if (stepMs > 0 && stepMs <= 60000) {
+        this.walkStepMs = stepMs;
+        this.emit({ type: 'walkSpeed', stepMs });
+      }
+      return;
+    }
+    if (id === 0x0087 && this.phase === 'map') {
+      const { x, y } = positionAt(p, 6);
+      this.emit({ type: 'walk', from: { x, y }, to: destinationAt(p, 6), stepMs: this.walkStepMs });
+      return;
+    }
     if (id === 0x0088 && this.phase === 'map') {
       const entityId = p.readUInt32LE(2);
       this.emit({ type: entityId === this.token.account ? 'position' : 'entity',

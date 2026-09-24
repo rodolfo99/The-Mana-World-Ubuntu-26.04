@@ -155,10 +155,15 @@ test('information overlays allow map clicks and an active dialogue blocks them',
 
 test('real starting map allows arrows and mouse movement out of bed', { timeout: 20000 }, async t => {
   const commands = [];
+  let position = { x: 22, y: 24 };
   const page = await loginPage(t, (socket, command) => {
     commands.push(command);
     if (command.type === 'login') socket.send(JSON.stringify({ type: 'world', map: '029-2', x: 22, y: 24, id: 42, name: 'Aria' }));
-    if (command.type === 'walk') socket.send(JSON.stringify({ type: 'position', x: command.x, y: command.y }));
+    if (command.type === 'walk') {
+      const to = { x: command.x, y: command.y };
+      socket.send(JSON.stringify({ type: 'walk', from: position, to, stepMs: 150 }));
+      position = to;
+    }
   });
   await page.waitForFunction(() => document.querySelector('.footer-status')?.textContent?.includes('Estás en'), { timeout: 12000 });
   await page.keyboard.press('ArrowUp');
@@ -181,6 +186,7 @@ test('real starting map allows arrows and mouse movement out of bed', { timeout:
 
 test('close2 keeps all NPC lines visible until Close and then releases arrows and mouse', { timeout: 12000 }, async t => {
   let locked = true;
+  let position = { x: 30, y: 25 };
   const { page, commands } = await worldPage(t, (socket, command) => {
     if (command.type === 'choice') {
       for (const text of ['Primera línea en español.', 'Segunda línea: vuelve a caminar.'])
@@ -188,8 +194,11 @@ test('close2 keeps all NPC lines visible until Close and then releases arrows an
       socket.send(JSON.stringify({ type: 'dialog', id: 5200, close: true }));
     }
     if (command.type === 'closeNpc') locked = false;
-    if (command.type === 'walk' && !locked)
-      socket.send(JSON.stringify({ type: 'position', x: command.x, y: command.y }));
+    if (command.type === 'walk' && !locked) {
+      const to = { x: command.x, y: command.y };
+      socket.send(JSON.stringify({ type: 'walk', from: position, to, stepMs: 150 }));
+      position = to;
+    }
   });
   const npc = await canvasPoint(page, -64, 0);
   await page.mouse.click(npc.x, npc.y);
@@ -223,4 +232,54 @@ test('Escape cancels an NPC menu and restores map focus without moving while typ
   await page.keyboard.press('ArrowLeft');
   await page.waitForTimeout(160);
   assert.equal(commands.filter(c => c.type === 'walk').length, 1);
+});
+
+test('mouse travel shows intermediate tiles at server speed and retargeting does not jump', { timeout: 12000 }, async t => {
+  let active = { from: 30, to: 30, started: Date.now() };
+  const stepMs = 400;
+  const { page, commands } = await worldPage(t, (socket, command) => {
+    if (command.type !== 'walk') return;
+    const travelled = Math.min(Math.abs(active.to - active.from), Math.floor((Date.now() - active.started) / stepMs));
+    const from = { x: active.from + Math.sign(active.to - active.from) * travelled, y: 25 };
+    active = { from: from.x, to: command.x, started: Date.now() };
+    socket.send(JSON.stringify({ type: 'walk', from, to: { x: command.x, y: command.y }, stepMs }));
+  });
+  const first = await canvasPoint(page, 128, 0);
+  await page.mouse.click(first.x, first.y);
+  await page.waitForFunction(() => document.querySelector('.map-card')?.textContent?.includes('31, 25'));
+  assert.deepEqual(commands.find(c => c.type === 'walk'), { type: 'walk', x: 34, y: 25 });
+  const next = await canvasPoint(page, 160, 0);
+  await page.mouse.click(next.x, next.y);
+  await page.waitForTimeout(450);
+  const label = await page.locator('.map-card').textContent();
+  const tile = Number(label.match(/COORDENADAS\s+(\d+),/)[1]);
+  const last = commands.filter(c => c.type === 'walk').at(-1);
+  assert.ok(tile >= 31 && tile <= 33, label);
+  assert.ok(tile < last.x, 'A new click must not put the player at its destination');
+  await page.waitForFunction(x => document.querySelector('.map-card')?.textContent?.includes(`${x}, 25`), last.x);
+  await page.waitForTimeout(250);
+  await page.keyboard.press('ArrowLeft');
+  await page.waitForFunction(x => document.querySelector('.map-card')?.textContent?.includes(`${x}, 25`), last.x - 1);
+});
+
+test('warps cancel walking, including a transfer between rooms of the same map', { timeout: 20000 }, async t => {
+  let wire, loaded = 0;
+  const page = await loginPage(t, (socket, command) => {
+    wire = socket;
+    if (command.type === 'login') socket.send(JSON.stringify({ type: 'world', map: '029-2', x: 43, y: 30, id: 42, name: 'Aria' }));
+    if (command.type === 'loaded') loaded++;
+    if (command.type === 'walk') socket.send(JSON.stringify({ type: 'walk', from: { x: 43, y: 30 }, to: { x: command.x, y: command.y }, stepMs: 1000 }));
+  });
+  await page.waitForFunction(() => document.querySelector('.footer-status')?.textContent?.includes('Estás en'), undefined, { timeout: 12000 });
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(160);
+  wire.send(JSON.stringify({ type: 'world', map: '029-2', x: 112, y: 85, id: 42, name: 'Aria' }));
+  await page.waitForFunction(() => document.querySelector('.map-card')?.textContent?.includes('112, 85') && !document.querySelector('.map-loading'));
+  await page.waitForTimeout(1100);
+  assert.ok((await page.locator('.map-card').textContent()).includes('112, 85'));
+  assert.equal(loaded, 2);
+  wire.send(JSON.stringify({ type: 'world', map: '029-1', x: 32, y: 100, id: 42, name: 'Aria' }));
+  await page.waitForFunction(() => document.querySelector('.map-card')?.textContent?.includes('32, 100') && !document.querySelector('.map-loading'));
+  await page.waitForTimeout(160);
+  assert.equal(loaded, 3);
 });

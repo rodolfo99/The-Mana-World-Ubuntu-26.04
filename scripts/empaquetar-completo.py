@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
-NAME = 'The-Mana-World-Ubuntu-26.04-angular-v0.2.3'
+NAME = 'The-Mana-World-Ubuntu-26.04-angular-v0.2.4'
 REQUIRED = (
     'sources/tmwa/src/wire/packets.hpp',
     'sources/mana/src/net/tmwa/protocol.h',

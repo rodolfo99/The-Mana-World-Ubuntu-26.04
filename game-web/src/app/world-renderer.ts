@@ -1,4 +1,5 @@
 /** Browser renderer for the pinned The Mana World TMX/TSX client data. */
+import { Tile, WalkingMotion, walkingPath } from './movement';
 export interface GameEntity {
   id: number;
   kind: 'player' | 'npc' | 'monster' | 'item';
@@ -208,7 +209,8 @@ export class WorldRenderer {
   private entities = new Map<number, Actor>();
   private self: Actor = { id: -1, kind: 'player', x: 22, y: 24, direction: 'down' };
   private selectedId: number | null = null;
-  private movingUntil = 0;
+  private readonly motion = new WalkingMotion();
+  private loadSequence = 0;
   private attackingUntil = 0;
   private actionStart = 0;
   private cameraX = 0;
@@ -219,7 +221,7 @@ export class WorldRenderer {
   private readonly resizeObserver: ResizeObserver;
   private readonly onResize = () => this.resize();
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, private readonly onLocation?: (tile: Tile) => void) {
     this.canvas = canvas;
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('El navegador no permite Canvas 2D.');
@@ -233,21 +235,25 @@ export class WorldRenderer {
   }
 
   destroy(): void {
+    this.loadSequence++;
     cancelAnimationFrame(this.frame);
     this.resizeObserver.disconnect();
     window.removeEventListener('resize', this.onResize);
   }
 
   async enter(mapName: string, x: number, y: number, id: number, name: string, mask = 1): Promise<string> {
+    const sequence = ++this.loadSequence;
     this.gameMap = null;
     this.hitRegions = [];
     this.self = { id, kind: 'player', x, y, direction: 'down', name };
+    this.motion.reset({ x, y });
     this.entities.clear();
     this.selectedId = null;
     const [map, avatar, maggot] = await Promise.all([
       loadMap(mapName), loadSprite('races/human-male').catch(() => null),
       loadSprite('monsters/maggot').catch(() => null)
     ]);
+    if (sequence !== this.loadSequence) return map.name;
     map.mask = mask;
     this.avatar = avatar;
     this.maggot = maggot;
@@ -256,16 +262,38 @@ export class WorldRenderer {
   }
 
   get name(): string { return this.gameMap?.name ?? ''; }
-  get location(): { x: number; y: number } { return { x: this.self.x, y: this.self.y }; }
+  get location(): Tile { return { x: Math.round(this.self.x), y: Math.round(this.self.y) }; }
   get target(): GameEntity | undefined { return this.selectedId === null ? undefined : this.entities.get(this.selectedId); }
   get isReady(): boolean { return !!this.gameMap; }
 
   setPosition(x: number, y: number): void {
-    if (x !== this.self.x || y !== this.self.y) {
-      this.self.direction = this.direction(this.self.x, this.self.y, x, y);
-      this.movingUntil = performance.now() + 240;
+    this.motion.reset({ x, y });
+    this.updateSelf(performance.now());
+  }
+
+  walk(from: Tile, to: Tile, stepMs: number): boolean {
+    const path = walkingPath(from, to, (x, y) => this.walkable(x, y));
+    if (!path) {
+      this.setPosition(from.x, from.y);
+      return false;
     }
-    this.self.x = x; this.self.y = y;
+    const now = performance.now();
+    this.motion.follow(path, stepMs, now);
+    this.updateSelf(now);
+    return true;
+  }
+
+  setWalkSpeed(stepMs: number): void {
+    this.motion.changeSpeed(stepMs, performance.now());
+  }
+
+  private updateSelf(now: number): void {
+    const previous = this.location;
+    const point = this.motion.advance(now);
+    this.self.direction = this.direction(this.self.x, this.self.y, point.x, point.y, this.self.direction);
+    this.self.x = point.x; this.self.y = point.y;
+    const tile = this.location;
+    if (tile.x !== previous.x || tile.y !== previous.y) this.onLocation?.(tile);
   }
 
   setEntity(entity: Pick<GameEntity, 'id'> & Partial<GameEntity>): void {
@@ -288,10 +316,9 @@ export class WorldRenderer {
   moveDirection(dx: number, dy: number): { x: number; y: number } | null {
     const map = this.gameMap;
     if (!map) return null;
+    this.updateSelf(performance.now());
     const x = Math.round(this.self.x + dx), y = Math.round(this.self.y + dy);
     if (!this.walkable(x, y)) return null;
-    this.self.direction = dx < 0 ? 'left' : dx > 0 ? 'right' : dy < 0 ? 'up' : 'down';
-    this.movingUntil = performance.now() + 200;
     return { x, y };
   }
 
@@ -360,6 +387,7 @@ export class WorldRenderer {
     ctx.fillRect(0, 0, this.cssWidth, this.cssHeight);
     const map = this.gameMap;
     if (!map) return;
+    this.updateSelf(now);
     this.cameraX = Math.max(0, Math.min(map.width * map.tw - this.cssWidth,
       (this.self.x + .5) * map.tw - this.cssWidth / 2));
     this.cameraY = Math.max(0, Math.min(map.height * map.th - this.cssHeight,
@@ -446,7 +474,7 @@ export class WorldRenderer {
     }
     if (sprite) {
       const action = self && now < this.attackingUntil ? 'attack' :
-        self && now < this.movingUntil ? 'walk' : 'stand';
+        self && this.motion.active ? 'walk' : 'stand';
       const frames = sprite.actions.get(`${action}:${actor.direction}`) ??
         sprite.actions.get(`stand:${actor.direction}`) ?? [];
       if (frames.length) {
