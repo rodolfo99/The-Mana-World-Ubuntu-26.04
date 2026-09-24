@@ -1,0 +1,9 @@
+[submodule "sources/tmwa"]
+	path = sources/tmwa
+	url = https://github.com/themanaworld/tmwa.git
+[submodule "sources/serverdata"]
+	path = sources/serverdata
+	url = https://github.com/themanaworld/tmwa-server-data.git
+[submodule "sources/mana"]
+	path = sources/mana
+	url = https://github.com/mana/mana.git
