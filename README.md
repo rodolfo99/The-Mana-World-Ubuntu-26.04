@@ -1,13 +1,18 @@
-# The Mana World: cliente y servidor local para Ubuntu 26.04
+# The Mana World para Ubuntu 26.04
 
-Proyecto de desarrollo con el cliente **Mana** y el servidor **TMWA** con su
-mundo, mapas, gráficos y scripts oficiales. Se compilan en tu propio Ubuntu
-26.04 x86_64. La compilación requiere conexión a los repositorios de Ubuntu
-para instalar dependencias. El juego queda configurado para **una sola
-computadora**. La administración local está activada y limitada a
-`127.0.0.1`, con contraseña aleatoria generada al instalar.
+Cliente **Mana**, servidor **TMWA** y datos del mundo para una partida local en
+Ubuntu 26.04 x86_64. El cliente se conecta a `127.0.0.1` y la administración
+se limita a esa dirección con una clave generada durante la instalación.
+Incluye una primera traducción automática al español de los diálogos de NPC.
 
-## Inicio rápido
+> **Estado:** las fuentes y los scripts se han preparado y comprobado, pero
+> todavía falta probar la compilación completa y una sesión de juego en
+> Ubuntu 26.04. La traducción de NPC necesita revisión de estilo y contexto.
+
+## Obtener el proyecto
+
+Necesitas Git, conexión a Internet y Ubuntu 26.04 x86_64 para ejecutar el
+instalador. Clona los tres proyectos originales y sus submódulos:
 
 ```bash
 git clone --recursive https://github.com/rodolfo99/The-Mana-World-Ubuntu-26.04.git
@@ -16,69 +21,74 @@ cd The-Mana-World-Ubuntu-26.04
 ./scripts/instalar.sh
 ```
 
-El repositorio fija las versiones originales del servidor TMWA, los datos del
-mundo y el cliente Mana como submódulos Git. `preparar-fuentes.sh` reconstruye
-el catálogo español y aplica las correcciones incluidas en este repositorio.
-También admite la opción «Download ZIP» de GitHub: descomprime ese ZIP y
-**ejecuta `./scripts/preparar-fuentes.sh`** antes de instalar. Esa descarga
-no incluye por sí sola el contenido de los submódulos; el script lo obtiene
-de los repositorios oficiales. Requiere Git y conexión a Internet.
+Ejecuta estos scripts con tu usuario habitual, **sin `sudo` delante**. Solo la
+instalación de paquetes dentro de `instalar.sh` utiliza `sudo apt-get`.
+El script `preparar-fuentes.sh` verifica y reconstruye el catálogo y el parche
+español, y aplica las correcciones al cliente y a los diálogos. Se puede
+volver a ejecutar: si un parche ya está aplicado, lo detecta. Si modificaste
+los mismos archivos, Git detendrá el parche para que revises el conflicto.
 
-Ejecuta el script como usuario normal, sin anteponer `sudo`. El instalador
-comprueba Ubuntu 26.04 x86_64, instala dependencias con `sudo apt-get`,
-compila TMWA y Mana, genera mapas, prepara archivos locales y configura la
-administración. No necesitas PostgreSQL ni Docker.
+**Si descargas «Download ZIP» desde GitHub:** ese ZIP contiene los scripts,
+la documentación y los parches comprimidos, pero GitHub no incluye las fuentes
+de los submódulos dentro de su ZIP. Descomprímelo, entra en la carpeta
+`The-Mana-World-Ubuntu-26.04-main` y ejecuta
+`./scripts/preparar-fuentes.sh` antes de instalar. El script descargará las
+versiones fijadas del servidor, los datos y el cliente. Git e Internet siguen
+siendo necesarios. El botón «Download ZIP» no equivale al antiguo paquete
+completo de esta conversación.
 
-En una terminal, inicia los tres procesos del servidor:
+La instalación compila el servidor y el cliente, genera los mapas y crea la
+configuración local. No requiere PostgreSQL ni Docker. Deja los ejecutables en
+`instalado/bin`, dentro **de esta copia** del proyecto.
+
+## Iniciar el juego
+
+En una terminal:
 
 ```bash
 ./scripts/servidor.sh
 ```
 
-Espera a ver que login (6901), personajes (6122) y mapa (5122) estén listos.
-En otra terminal, inicia el cliente:
+Cuando login (`6901`), personajes (`6122`) y mapa (`5122`) estén listos, abre
+otra terminal en la misma carpeta:
 
 ```bash
 ./scripts/cliente.sh
 ```
 
-Si el cliente indica que falta `instalado/bin/mana`, busca primero una
-compilación en otra copia extraída del proyecto (por ejemplo una carpeta
-con `(2)` en su nombre):
+El cliente apunta a `127.0.0.1:6901` y utiliza los gráficos y mapas locales.
+Registra una cuenta desde Mana y crea un personaje. Detén el servidor con
+`Ctrl+C` en su terminal. Esta configuración es para un solo equipo; para
+jugar desde otro dispositivo también hay que configurar las direcciones
+anunciadas por el servidor.
+
+### Si falta el ejecutable `mana`
+
+Cada copia tiene su propio `instalado/bin/mana`. Comprueba si la compilación
+quedó en otra carpeta:
 
 ```bash
 find "$HOME/Descargas" -type f -path '*/instalado/bin/mana' -executable -print
 ```
 
-Si aparece en otra carpeta, desde esta copia puedes ejecutarla con
-`MANA_BIN='/ruta/encontrada/instalado/bin/mana' ./scripts/cliente.sh`.
-El cliente tomará los datos del juego de la copia actual. Si no aparece,
-la instalación pudo detenerse antes de compilar Mana. Con las dependencias
-ya instaladas, compila únicamente el cliente:
+Si aparece una ruta, puedes utilizar ese cliente desde la copia actual:
+
+```bash
+MANA_BIN='/ruta/que/imprimio/find' ./scripts/cliente.sh
+```
+
+Si no aparece, compila solo el cliente después de instalar sus dependencias:
 
 ```bash
 ./scripts/instalar-cliente.sh
 ./scripts/cliente.sh
 ```
 
-El script `instalar-cliente.sh` no reinstala el servidor ni las dependencias.
-Si CMake indica una dependencia ausente, ejecuta de nuevo el instalador
-completo y conserva el mensaje de error para diagnosticarla.
-
-Si tu carpeta tiene paréntesis, como `The-Mana-World-Ubuntu-26.04(2)`, y
-la generación de `locale/es/LC_MESSAGES/mana.mo` falla con
-`/bin/sh: Syntax error: "(" unexpected`, usa la versión corregida de
-`sources/mana/po/CMakeLists.txt` incluida en este paquete y vuelve a ejecutar
-`./scripts/instalar-cliente.sh`. Este script configura CMake de nuevo y
-reanuda la compilación. Los avisos sobre Allegro o SDL clásico en la
-configuración de Guichan indican extensiones opcionales desactivadas;
-el error de las traducciones se debía a la ruta con paréntesis.
-
-En Mana elige registro para crear una cuenta y luego un personaje. El
-servidor es `127.0.0.1:6901`; el script ya lo indica al cliente. Cierra el
-servidor con `Ctrl+C` en su terminal. Para otro equipo de tu red hace falta
-configurar las IP anunciadas en `login/conf/lan_support.conf` y
-`world/conf/lan_support.conf`; la configuración incluida es local.
+Este último script no instala paquetes ni recompila el servidor. Si la
+compilación se detiene por una dependencia ausente, ejecuta `instalar.sh` y
+revisa el primer error. `preparar-fuentes.sh` ya aplica la corrección de
+CMake que permite generar traducciones en rutas con paréntesis, como una
+carpeta terminada en `(2)`.
 
 ## Administración local
 
@@ -88,143 +98,107 @@ Con el servidor en marcha, abre una tercera terminal:
 ./scripts/admin.sh
 ```
 
-La consola `tmwa-admin` lee la contraseña automáticamente desde
-`sources/serverdata/login/conf/ladmin_local.conf`. La misma clave se
-sincroniza con `login_local.conf`; ambos archivos reciben permiso `600`.
-El servidor permite administrar desde `127.0.0.1` únicamente. La
-contraseña no se imprime ni viene fijada en el ZIP.
+`tmwa-admin` lee la clave de `sources/serverdata/login/conf/ladmin_local.conf`.
+La instalación la genera de forma aleatoria, la sincroniza con
+`login_local.conf`, limita el acceso a `127.0.0.1` y da permisos `600` a los
+archivos que contienen la clave. No hay usuario ni contraseña de jugador
+predefinidos: registra tu cuenta desde el cliente. Dentro de la consola
+administrativa puedes consultar `help`, `list` y `help add`. Los niveles GM
+se guardan en `sources/serverdata/login/save/gm_account.txt` y pueden requerir
+volver a iniciar sesión para reflejarse.
 
-Dentro de la consola administrativa:
+## Español
 
-```text
-help
-list
-help add
-```
+El cliente incorpora el catálogo `sources/mana/po/es.po`. En Mana selecciona
+**Setup → Interface → Language → Español** y reinicia el cliente. También
+puedes probar `LANGUAGE=es ./scripts/cliente.sh` si no has elegido otro idioma
+en los ajustes.
 
-La ayuda del propio programa muestra las demás órdenes y sus argumentos.
-La administración gestiona cuentas; la asignación de nivel GM se guarda en
-`sources/serverdata/login/save/gm_account.txt` y normalmente requiere
-reiniciar sesión para reflejarse.
+Después de `preparar-fuentes.sh`, los diálogos traducidos están en
+`sources/serverdata/world/map/npc/`. Se modificaron 424 archivos y 11 976
+apariciones de textos. El catálogo editable queda en
+`localizacion/npc_es.json`; `localizacion/npc-es.patch` permite aplicar esa
+misma traducción a las fuentes originales. Es una primera pasada automática:
+quedan frases especiales en inglés y conviene revisar pistas, nombres y
+contexto de misiones. Consulta [la documentación de localización](localizacion/README.md).
 
 ## Docker Compose (opcional, solo servidor)
 
-Los autores ya incluyen un `docker-compose.yml` en
-`sources/serverdata/`. Usa la imagen `ghcr.io/themanaworld/tmwa:latest`
-y `network_mode: host`; el cliente gráfico Mana se ejecuta en Ubuntu.
-Si quieres usar esta vía, prepara los datos sin compilar:
+Tras `preparar-fuentes.sh`, puedes utilizar el `docker-compose.yml` incluido
+por el proyecto original de datos del servidor. Requiere Docker y el plugin
+`docker compose`; el cliente gráfico se ejecuta en Ubuntu:
 
 ```bash
 make -C sources/serverdata maps conf news
 python3 scripts/configurar-local.py sources/serverdata
 ./scripts/docker-servidor.sh up
 ./scripts/docker-servidor.sh logs
-./scripts/cliente.sh
 ```
 
-El último comando necesita que antes hayas compilado Mana con
-`./scripts/instalar.sh` o `./scripts/instalar-cliente.sh`, o que indiques
-mediante `MANA_BIN` un cliente Mana compatible. Para detener y consultar:
+Para el cliente necesitas compilar Mana con `instalar-cliente.sh` (y disponer
+de sus dependencias) o indicar `MANA_BIN` a un cliente compatible. Para detener
+el servidor de Compose, usa `./scripts/docker-servidor.sh down`. No ejecutes
+simultáneamente el servidor nativo y el contenedor: ambos usan los puertos
+`6901`, `6122` y `5122`. La imagen del Compose original emplea `:latest` y
+puede cambiar con el tiempo.
 
-```bash
-./scripts/docker-servidor.sh down
-./scripts/docker-servidor.sh ps
-```
-
-Compose emplea puertos del **host** (6901, 6122, 5122) y persiste los datos
-en `sources/serverdata`. No ejecutes a la vez los servidores nativo y
-Docker. La imagen `:latest` puede cambiar: si buscas compilación
-reproducible usa el servidor nativo de este ZIP.
-
-## Archivos, desarrollo y mantenimiento
+## Datos y mantenimiento
 
 | Ruta | Contenido |
 | --- | --- |
-| `sources/tmwa` | Fuentes del servidor y repositorio Git con etiquetas; necesario para CMake |
-| `sources/serverdata` | Configuración, mapas, misiones, submódulos de cliente y herramientas |
-| `sources/mana` | Fuentes del cliente SDL2 y Guichan |
-| `instalado/bin` | Binarios locales tras compilar |
-| `sources/serverdata/login/save` | Cuentas y permisos GM |
-| `sources/serverdata/world/save` | Personajes |
-| `sources/serverdata/world/map/save` | Estado del mapa, si se genera |
-| `respaldos` | Copias hechas con `scripts/respaldo.sh` |
+| `sources/tmwa` | Servidor original, con su historial y etiquetas Git |
+| `sources/serverdata` | Cuentas, personajes, mapas y scripts NPC |
+| `sources/mana` | Cliente Mana y Guichan |
+| `scripts/` | Preparación, instalación, arranque y diagnóstico |
+| `localizacion/` | Parches y catálogo español reconstruidos al preparar |
+| `instalado/` | Binarios locales tras compilar |
+| `respaldos/` | Copias de cuentas y personajes |
 
-Para conservar cuentas y personajes, **detén primero el servidor** y
-ejecuta `./scripts/respaldo.sh`. Para restaurar, detén el servidor y extrae
-tu copia desde `sources/serverdata/` conservando las rutas del archivo.
-El repositorio no contiene cuentas personales; las crea tu instalación local.
+Detén el servidor antes de respaldar:
 
-Si editas mapas `.tmx` de `client-data/maps`, regenera las colisiones
-servidor con `make -C sources/serverdata maps` y reinicia el servidor.
-Para scripts NPC, edita `world/map/npc` y reinicia el proceso del mapa.
-La opción `-d` del cliente carga los gráficos y mapas locales. El
-`update_host` del servidor se deja vacío para evitar mezclar sus archivos
-con las actualizaciones públicas.
+```bash
+./scripts/respaldo.sh
+```
 
-## Español y traducciones
+Para restaurar, detén el servidor y extrae la copia conservando las rutas
+dentro de `sources/serverdata/`. Las cuentas y contraseñas generadas por tu
+instalación no forman parte de este repositorio. Si cambias scripts NPC,
+reinicia el proceso del mapa; si modificas mapas `.tmx`, vuelve a generar las
+colisiones con `make -C sources/serverdata maps`.
 
-El instalador compila Mana con soporte de traducciones y con el catálogo
-español de `sources/mana/po/es.po`. En el cliente abre **Setup → Interface →
-Language**, elige **Español** y reinicia el cliente para aplicar el cambio.
-En una instalación que use el idioma español del sistema también puede
-seleccionarse automáticamente. Puedes probar `LANGUAGE=es
-./scripts/cliente.sh`; si ya elegiste otro idioma en los ajustes, la
-preferencia del cliente tiene prioridad.
-
-El catálogo de Mana traduce su interfaz (menús, inventario, mensajes del
-cliente). Los textos de NPC se han traducido directamente en
-`sources/serverdata/world/map/npc/`. Consulta
-`localizacion/README.md` para el alcance, las frases pendientes y la
-revisión necesaria de esta primera pasada. Los identificadores, las
-variables y la lógica de las misiones se conservaron.
-
-## Diagnóstico
+## Diagnóstico y alcance de las pruebas
 
 ```bash
 ./scripts/diagnostico.sh
 ```
 
-- Si falta `cmake` o alguna biblioteca, comprueba que la instalación de
-  paquetes terminó sin errores y que tienes habilitado `universe` en Ubuntu.
-- Si el servidor no arranca, verifica sus mensajes y que 6901, 6122 y 5122
-  estén libres. `ss -ltn` muestra los puertos ocupados.
-- Si el cliente se conecta al login y se desconecta al elegir personaje,
-  comprueba que `tmwa-char` y `tmwa-map` arrancaron. Los archivos
-  `lan_support.conf` anuncian `127.0.0.1`.
-- Si no se ven mapas o sprites, comprueba la ruta
-  `sources/serverdata/client-data` y vuelve a ejecutar el instalador.
-- Si `tmwa-admin` indica contraseña o IP incorrecta, vuelve a ejecutar
-  `python3 scripts/configurar-local.py sources/serverdata` con el servidor
-  apagado. Es idempotente y conserva la clave ya generada.
-- En equipos con poca RAM reduce compilaciones simultáneas:
-  `JOBS=2 ./scripts/instalar.sh`.
+- Si falla la descarga de fuentes, repite `./scripts/preparar-fuentes.sh` y
+  conserva el primer error de Git.
+- Si `apt-get` falla, resuelve la dependencia indicada antes de compilar.
+- Si el cliente abre pero no entra al mundo, comprueba que los tres procesos
+  del servidor estén activos y que los puertos `6901`, `6122` y `5122` estén
+  libres. `ss -ltn` permite revisarlos.
+- Si falta memoria al compilar, prueba `JOBS=2 ./scripts/instalar.sh`.
+- Si cambias de copia del proyecto, recuerda que `instalado/` pertenece a la
+  copia en que compilaste.
 
-**Alcance de la verificación:** en Ubuntu 24.04 del entorno de preparación
-se completaron la compilación de TMWA con CMake, la generación de mapas y
-configuraciones, la sintaxis de scripts y la verificación de claves
-administrativas. La prueba de ejecución se detuvo porque el entorno solo
-permite ejecutarse como root y TMWA rechaza root por diseño. No se pudieron
-instalar las dependencias del cliente ni ejecutar Docker aquí. La sesión
-gráfica y el arranque completo en Ubuntu 26.04 quedan por validar en tu PC.
+Durante la preparación se comprobó la compilación de TMWA, la generación de
+mapas y configuraciones, la sintaxis de los scripts, la reconstrucción de los
+parches y un clon público del repositorio. Las pruebas locales se realizaron
+en un entorno Ubuntu 24.04; el cliente gráfico, Docker y la sesión completa
+en Ubuntu 26.04 siguen pendientes de verificación en un equipo con ese sistema.
 
 ## Procedencia y licencias
 
-Fuentes oficiales descargadas el 24 de septiembre de 2026:
+Las fuentes se fijan mediante submódulos Git:
 
-| Pieza | Repositorio | Commit incluido |
+| Proyecto | Origen | Commit |
 | --- | --- | --- |
-| TMWA | <https://github.com/themanaworld/tmwa> | `fe83504049c2` |
-| Datos del servidor | <https://github.com/themanaworld/tmwa-server-data> | `394c167597b4` |
-| Datos del cliente | <https://git.themanaworld.org/tmw/clientdata> | `b3b082bfe15a` |
-| Herramientas | <https://git.themanaworld.org/tmw/tools> | `9757be2a5eed` |
-| Mana | <https://git.themanaworld.org/mana/mana> | `6c1e41d28f22` |
-| Guichan | <https://github.com/darkbitsorg/guichan> | `c30941892acb` |
+| TMWA | [themanaworld/tmwa](https://github.com/themanaworld/tmwa) | `fe83504049c2` |
+| Datos del servidor | [themanaworld/tmwa-server-data](https://github.com/themanaworld/tmwa-server-data) | `394c167597b4` |
+| Mana | [mana/mana](https://github.com/mana/mana) | `6c1e41d28f22` |
 
-Cada fuente conserva sus archivos `COPYING`, licencias y autorías. Esta
-colección y sus scripts no son una distribución oficial del proyecto.
-El código del servidor y los datos poseen licencias distintas entre sí y
-algunos recursos mantienen atribuciones propias; consulta los archivos
-de cada repositorio si redistribuyes una versión modificada.
-
-Referencia de instalación del proyecto:
-<https://wiki.themanaworld.org/wiki/Setting_up_a_server>.
+Cada proyecto y recurso conserva sus propias licencias y autorías. Este
+repositorio es una adaptación comunitaria; no es una distribución oficial de
+The Mana World. Consulta los archivos `COPYING` y licencias de los submódulos
+antes de redistribuir modificaciones.
