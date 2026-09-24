@@ -6,7 +6,7 @@
 
   <main class="game-layout">
     <section class="game-surface" aria-label="Mundo del juego">
-      <canvas #viewport tabindex="0" (click)="onCanvasClick($event)" aria-label="Mapa interactivo"></canvas>
+      <canvas #viewport tabindex="0" (pointerdown)="onCanvasPointerDown($event)" (contextmenu)="$event.preventDefault()" aria-label="Mapa interactivo"></canvas>
       <div class="canvas-scrim" *ngIf="phase !== 'game' || loadingMap"></div>
 
       <div class="auth-screen" *ngIf="phase === 'login'">
@@ -68,7 +68,7 @@
               <input name="npcAnswer" [(ngModel)]="dialogInput" [type]="npcDialog.input === 'number' ? 'number' : 'text'" [placeholder]="npcDialog.input === 'number' ? 'Escribe una cantidad…' : 'Escribe tu respuesta…'" required>
               <button type="submit" [disabled]="!dialogInput.trim()">Responder →</button>
             </form>
-            <div class="dialog-actions"><button type="button" *ngFor="let choice of npcDialog.choices; let index = index" (click)="chooseDialog(index)">{{ choice }}</button>
+            <div class="dialog-actions"><ng-container *ngFor="let choice of npcDialog.choices; let index = index"><button type="button" *ngIf="choice.trim()" (click)="chooseDialog(index)">{{ choice }}</button></ng-container>
               <button type="button" *ngIf="npcDialog.next && !npcDialog.choices.length && !npcDialog.input" (click)="nextDialog()">Continuar →</button>
               <button type="button" class="subtle" (click)="closeDialog()">Cerrar</button></div></div>
         </div>

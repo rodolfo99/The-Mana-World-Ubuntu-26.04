@@ -23,7 +23,7 @@ after(async () => {
   if (server) await new Promise(resolve => server.close(resolve));
 });
 
-async function loginPage(t, reply) {
+async function loginPage(t, reply, setup = async () => {}) {
   const page = await browser.newPage();
   page.setDefaultTimeout(5000);
   t.after(() => page.close());
@@ -33,6 +33,7 @@ async function loginPage(t, reply) {
       setTimeout(() => reply(socket, JSON.parse(String(message))), 75);
     });
   });
+  await setup(page);
   await page.goto(`http://127.0.0.1:${port}`);
   await page.locator('input[name="username"]').fill('tester');
   await page.locator('input[name="password"]').fill('test-password');
@@ -73,4 +74,80 @@ test('a WebSocket disconnection releases the login button', { timeout: 10000 }, 
   const page = await loginPage(t, socket => socket.close());
   await page.locator('.auth-status').filter({ hasText: 'Se perdió la conexión' }).waitFor({ state: 'visible' });
   await page.waitForFunction(() => !document.querySelector('.auth-submit')?.textContent?.includes('Conectando'));
+});
+
+async function worldPage(t) {
+  const commands = [];
+  const page = await loginPage(t, (socket, command) => {
+    commands.push(command);
+    if (command.type === 'login') socket.send(JSON.stringify({ type: 'world', map: 'pointer-test', x: 30, y: 25, id: 42, name: 'Aria' }));
+    if (command.type === 'loaded') socket.send(JSON.stringify({ type: 'entity', id: 5200, kind: 'npc', x: 28, y: 25, name: 'Nina' }));
+    if (command.type === 'talk') socket.send(JSON.stringify({ type: 'dialog', id: 5200, text: 'Hola, viajero.', choices: ['Sí', '', 'No'] }));
+  }, async page => {
+    await page.route('**/assets/maps/pointer-test.tmx', route => route.fulfill({
+      contentType: 'application/xml',
+      body: '<map width="80" height="60" tilewidth="32" tileheight="32"><properties><property name="name" value="Prueba del ratón"/></properties></map>',
+    }));
+  });
+  await page.locator('.map-card').waitFor({ state: 'visible' });
+  await page.locator('.map-loading').waitFor({ state: 'hidden' });
+  await page.waitForFunction(() => document.querySelector('.footer-status')?.textContent?.includes('Estás en'));
+  // Wait for the delayed entity reply and the next painted frame.
+  await page.waitForTimeout(200);
+  return { page, commands };
+}
+
+async function canvasPoint(page, dx = 0, dy = 0) {
+  return page.locator('canvas').evaluate((canvas, { dx, dy }) => {
+    const rect = canvas.getBoundingClientRect();
+    return { x: rect.left + (canvas.clientWidth / 2 + dx) * rect.width / canvas.clientWidth,
+      y: rect.top + (canvas.clientHeight / 2 + dy) * rect.height / canvas.clientHeight };
+  }, { dx, dy });
+}
+
+test('ground beside an NPC moves without opening its dialogue', { timeout: 10000 }, async t => {
+  const { page, commands } = await worldPage(t);
+  const point = await canvasPoint(page, -64 + 24, 0);
+  await page.mouse.click(point.x, point.y);
+  await page.waitForTimeout(160);
+  const action = commands.find(command => command.type === 'walk' || command.type === 'talk');
+  assert.deepEqual(action, { type: 'walk', x: 29, y: 25 });
+});
+
+test('scaled canvas maps the pointer to the rendered world coordinates', { timeout: 10000 }, async t => {
+  const { page, commands } = await worldPage(t);
+  await page.locator('canvas').evaluate(canvas => {
+    canvas.style.transformOrigin = 'top left';
+    canvas.style.transform = 'scale(0.75)';
+  });
+  const point = await canvasPoint(page, 64, 0);
+  await page.mouse.click(point.x, point.y);
+  await page.waitForTimeout(160);
+  assert.deepEqual(commands.find(command => command.type === 'walk'), { type: 'walk', x: 32, y: 25 });
+});
+
+test('NPC labels are clickable and blank choices retain their server index', { timeout: 10000 }, async t => {
+  const { page, commands } = await worldPage(t);
+  const point = await canvasPoint(page, -64, -34);
+  await page.mouse.click(point.x, point.y);
+  await page.locator('.dialog-card').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.dialog-actions button').count(), 3);
+  await page.getByRole('button', { name: 'No', exact: true }).click();
+  await page.waitForTimeout(160);
+  assert.deepEqual(commands.find(command => command.type === 'choice'), { type: 'choice', id: 5200, index: 3 });
+});
+
+test('information overlays allow map clicks and an active dialogue blocks them', { timeout: 10000 }, async t => {
+  const { page, commands } = await worldPage(t);
+  const box = await page.locator('.map-card').boundingBox();
+  await page.mouse.click(box.x + 10, box.y + 10);
+  await page.waitForTimeout(160);
+  assert.equal(commands.filter(command => command.type === 'walk').length, 1);
+  const npc = await canvasPoint(page, -64, 0);
+  await page.mouse.click(npc.x, npc.y);
+  await page.locator('.dialog-card').waitFor({ state: 'visible' });
+  const ground = await canvasPoint(page, 64, -60);
+  await page.mouse.click(ground.x, ground.y);
+  await page.waitForTimeout(160);
+  assert.equal(commands.filter(command => command.type === 'walk').length, 1);
 });

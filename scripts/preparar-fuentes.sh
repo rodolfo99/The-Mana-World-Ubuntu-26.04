@@ -28,29 +28,5 @@ else
   clone_pinned sources/mana https://github.com/mana/mana.git 6c1e41d28f2274a4aede383f2e331b2130ef34b9
 fi
 
-unpack() {
-  local name="$1" output="$ROOT/localizacion/$1" tmp
-  tmp="$(mktemp "$ROOT/localizacion/.${name}.XXXXXX")"
-  if ! cat "$ROOT/localizacion/$name".gz.b64.part-* | base64 --decode | gzip -dc > "$tmp"; then
-    rm -f "$tmp"
-    echo "No se pudo reconstruir $name" >&2
-    exit 1
-  fi
-  mv "$tmp" "$output"
-}
-unpack npc-es.patch
-unpack npc_es.json
-(cd "$ROOT/localizacion" && sha256sum -c SHA256SUMS)
-
-apply_once() {
-  local project="$1" patch="$2"
-  if git -C "$project" apply --reverse --check "$patch" >/dev/null 2>&1; then
-    echo "Parche ya aplicado: $patch"
-  else
-    git -C "$project" apply --check "$patch"
-    git -C "$project" apply "$patch"
-  fi
-}
-apply_once "$ROOT/sources/mana" "$ROOT/patches/mana-po.patch"
-apply_once "$ROOT/sources/serverdata" "$ROOT/localizacion/npc-es.patch"
+"$ROOT/scripts/preparar-traduccion.sh"
 echo "Fuentes listas. Ejecuta: ./scripts/instalar.sh"

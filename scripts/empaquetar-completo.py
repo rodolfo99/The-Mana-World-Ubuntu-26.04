@@ -3,10 +3,11 @@
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 import os
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
-NAME = 'The-Mana-World-Ubuntu-26.04-angular-v0.2.1'
+NAME = 'The-Mana-World-Ubuntu-26.04-angular-v0.2.2'
 REQUIRED = (
     'sources/tmwa/src/wire/packets.hpp',
     'sources/mana/src/net/tmwa/protocol.h',
@@ -59,6 +60,8 @@ def main() -> None:
     target = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT.parent / f'{NAME}.zip'
     if target.is_relative_to(ROOT):
         sys.exit('El ZIP debe guardarse fuera del repositorio para evitar incluirse a sí mismo.')
+    # El archivo completo debe contener los diálogos traducidos, no solo el parche.
+    subprocess.run([str(ROOT / 'scripts/preparar-traduccion.sh')], check=True)
     count = 0
     with ZipFile(target, 'w', ZIP_DEFLATED, compresslevel=6, allowZip64=True) as archive:
         for folder, dirs, files in os.walk(ROOT):

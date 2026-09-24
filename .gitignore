@@ -3,3 +3,4 @@
 /localizacion/npc-es.patch
 /localizacion/npc_es.json
 **/build-local/
+**/__pycache__/

@@ -23,6 +23,25 @@ fragmentos comprimidos. Si el parche ya estaba aplicado, el script lo detecta.
 Si habías modificado los mismos diálogos, Git se detendrá para que revises
 tus cambios.
 
+Desde 0.2.2 el ZIP completo incluye los 424 scripts NPC con el parche ya
+aplicado. `scripts/empaquetar-completo.py` lo comprueba antes de crear el
+archivo, y los scripts de instalación y arranque del servidor lo verifican
+de nuevo. Esto corrige los ZIP 0.2.0/0.2.1, cuyos scripts NPC originales
+permanecían en inglés hasta ejecutar la preparación.
+
+Para recuperar únicamente el español de una instalación existente:
+
+```bash
+./scripts/preparar-traduccion.sh --npc
+```
+
+Después reinicia el servidor para que cargue los diálogos. El script no
+actualiza submódulos, no cambia cuentas ni reemplaza configuraciones.
+Acepta submódulos con `.git` como archivo o directorio y reconoce el parche
+ya aplicado. Conserva catálogos locales modificados y archivos con conflictos;
+si detecta alguno, se detiene e indica la ruta para que revises tus cambios.
+`aplicar-parche-es.sh` utiliza este mismo procedimiento.
+
 El catálogo JSON asigna a cada texto original en inglés la traducción usada.
 `scripts/npc_es.py` permite comprobar coincidencias con una copia original y
 aplicar el catálogo:

@@ -9,7 +9,7 @@ Incluye una primera traducción automática al español de los diálogos de NPC.
 > todavía falta probar la compilación completa y una sesión de juego en
 > Ubuntu 26.04. La traducción de NPC necesita revisión de estilo y contexto.
 
-## Cliente web jugable (v0.2.1)
+## Cliente web jugable (v0.2.2)
 
 `game-web/` incorpora un cliente Angular 22 separado del panel administrativo
 `admin-web/`. Se conecta al mismo servidor TMWA por una pasarela local y
@@ -23,6 +23,13 @@ respuestas WebSocket y la carga de mapas notifican sus cambios a Angular 22.
 El formulario muestra el motivo de rechazo y las conexiones que no responden
 se cancelan tras 15 segundos. La guía incluye cómo actualizar una instalación
 existente y pruebas de regresión en navegador.
+
+La versión 0.2.2 corrige las coordenadas del ratón cuando aparece el panel
+lateral o cambia el tamaño del mapa. La selección utiliza el gráfico visible
+de cada personaje y los cuadros informativos permiten hacer clic en el mapa.
+El ZIP completo ahora lleva los diálogos de NPC **ya traducidos**. La
+instalación, el arranque del servidor y el empaquetado comprueban el español.
+Si usabas 0.2.0/0.2.1, sigue [la recuperación de español y ratón](game-web/README.md#recuperar-el-español-y-corregir-el-ratón-022).
 
 Con el servidor instalado y encendido en otra terminal:
 
@@ -59,8 +66,9 @@ cd The-Mana-World-Ubuntu-26.04
 
 Ejecuta estos scripts con tu usuario habitual, **sin `sudo` delante**. Solo la
 instalación de paquetes dentro de `instalar.sh` utiliza `sudo apt-get`.
-El script `preparar-fuentes.sh` verifica y reconstruye el catálogo y el parche
-español, y aplica las correcciones al cliente y a los diálogos. Se puede
+El script `preparar-fuentes.sh` llama a `preparar-traduccion.sh`, que verifica
+y reconstruye el catálogo y el parche español, y aplica las correcciones al
+cliente y a los diálogos. Se puede
 volver a ejecutar: si un parche ya está aplicado, lo detecta. Si modificaste
 los mismos archivos, Git detendrá el parche para que revises el conflicto.
 

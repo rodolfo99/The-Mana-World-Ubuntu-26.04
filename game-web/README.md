@@ -1,4 +1,4 @@
-# Cliente jugable Angular para The Mana World (v0.2.1)
+# Cliente jugable Angular para The Mana World (v0.2.2)
 
 Esta aplicación es independiente de `admin-web/`. Conserva el servidor TMWA
 y los datos del mundo de este repositorio; un servicio Node local convierte
@@ -36,6 +36,48 @@ instala dependencias con `npm ci` y compila Angular. El servidor TMWA usa
 6901 (acceso), 6122 (personajes) y 5122 (mapa). Cambia el puerto de la web
 con `GAME_WEB_PORT=3021 ./scripts/juego-web.sh` si 3020 está ocupado.
 Node.js compatible: 22.22.3+, 24.15+ o 26+.
+
+## Recuperar el español y corregir el ratón (0.2.2)
+
+Los ZIP 0.2.0/0.2.1 incluían los fragmentos del parche de español, pero los
+datos del servidor permanecían en inglés si no se ejecutaba la preparación.
+El ZIP 0.2.2 se genera después de aplicar los 424 scripts NPC traducidos.
+`instalar.sh`, `servidor.sh` y el arranque Docker también comprueban el parche.
+
+Para actualizar la misma instalación, detén el servidor y el cliente web con
+`Ctrl+C` en sus terminales. Desde la raíz del proyecto:
+
+```bash
+git fetch origin main
+git restore --source=origin/main -- game-web scripts README.md localizacion/README.md
+./scripts/preparar-traduccion.sh
+./scripts/servidor.sh
+```
+
+En otra terminal de esa misma carpeta:
+
+```bash
+./scripts/juego-web.sh
+```
+
+Recarga el navegador con `Ctrl+Shift+R`. La actualización conserva las cuentas,
+personajes y configuraciones en `sources/serverdata`; sustituye los archivos
+del cliente y scripts indicados, por lo que debes guardar tus modificaciones
+propias en esas rutas si las hubiera. No requiere recompilar TMWA. Si el
+preparador detecta un catálogo o diálogo modificado que entra en conflicto,
+se detiene y conserva ese archivo para revisión.
+
+El mapa ahora observa los cambios de tamaño de su Canvas, incluido el ancho
+que ocupa la barra lateral al entrar. Convierte las coordenadas del puntero
+al espacio usado para dibujar y selecciona las zonas visibles de sprites,
+marcadores y nombres. Un clic en suelo contiguo a un NPC ya no selecciona el
+NPC por proximidad. Los cuadros informativos dejan pasar el clic; un diálogo
+abierto bloquea las órdenes al mapa. Las opciones vacías de menús NPC quedan
+ocultas sin cambiar el índice que espera el servidor.
+
+El alcance de la traducción sigue siendo el [documentado para los NPC](../localizacion/README.md).
+El contenido excluido del catálogo, las reglas y algunos nombres originales
+pueden seguir en inglés.
 
 ## Actualizar una instalación 0.2.0 que queda en «Conectando…»
 
@@ -133,10 +175,18 @@ de acceso y desconexión. Usa respuestas simuladas y carga el mapa original
 El navegador puede indicarse con `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` y el
 puerto de pruebas con `GAME_WEB_TEST_PORT` (31320 por defecto).
 
-Validación de 0.2.1: ocho pruebas del protocolo/pasarela y tres pruebas de
-navegador satisfactorias. La prueba del cambio de pantalla fallaba en el
-paquete 0.2.0 y pasa con esta corrección. Esto no sustituye una partida real
-con los tres procesos TMWA en Ubuntu 26.04.
+Validación de 0.2.2: ocho pruebas del protocolo/pasarela, siete de navegador
+y tres del preparador de español. Los casos del ratón fallaban en 0.2.1 y
+pasan con esta corrección. Las pruebas de español verifican repetición,
+metadatos Git de submódulos y conservación de cuentas y cambios personales:
+
+```bash
+# Desde la raíz del proyecto
+python3 -m unittest discover -s scripts/tests -v
+```
+
+Estas comprobaciones no sustituyen una partida real con los tres procesos
+TMWA en Ubuntu 26.04.
 
 El backend requiere que estén inicializados los submódulos `sources/mana` y
 `sources/serverdata/client-data`. Para desarrollo del repositorio ejecuta

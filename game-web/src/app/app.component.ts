@@ -234,8 +234,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     return null;
   }
 
-  onCanvasClick(event: MouseEvent): void {
-    if (!this.renderer?.isReady || this.loadingMap) return;
+  onCanvasPointerDown(event: PointerEvent): void {
+    if (!event.isPrimary || event.button !== 0 || this.phase !== 'game' || this.dialog || !this.renderer?.isReady || this.loadingMap) return;
+    event.preventDefault();
     const hit = this.renderer.hit(event.clientX, event.clientY);
     this.target = this.renderer.target;
     if (hit.entity) {
@@ -244,8 +245,11 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       else if (hit.entity.kind === 'item') this.send({ type: 'pickup', id: hit.entity.id });
     } else if (hit.tile) {
       this.send({ type: 'walk', ...hit.tile });
+      this.status = `Destino: ${hit.tile.x}, ${hit.tile.y}.`;
+    } else if (hit.blocked) {
+      this.status = 'Esa casilla no es transitable.';
     }
-    this.viewport.nativeElement.focus();
+    this.viewport.nativeElement.focus({ preventScroll: true });
   }
 
   @HostListener('window:keydown', ['$event'])

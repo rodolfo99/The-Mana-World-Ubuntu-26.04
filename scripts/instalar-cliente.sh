@@ -16,6 +16,7 @@ fi
 }
 command -v cmake >/dev/null || { echo "Falta cmake; ejecuta ./scripts/instalar.sh para instalar las dependencias." >&2; exit 1; }
 
+"$ROOT/scripts/preparar-traduccion.sh" --cliente
 echo "Compilando Mana en: $PREFIX/bin/mana"
 cmake -S "$CLIENT" -B "$CLIENT/build-local" -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" -DUSE_SYSTEM_GUICHAN=OFF \

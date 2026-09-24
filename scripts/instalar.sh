@@ -39,6 +39,7 @@ paquetes=(
   zlib1g-dev libgl-dev libpng-dev gettext
 )
 sudo apt-get install -y "${paquetes[@]}"
+"$ROOT/scripts/preparar-traduccion.sh"
 
 echo "Compilando TMWA..."
 cmake -S "$SERVER" -B "$SERVER/build-local" -DCMAKE_BUILD_TYPE=Release \

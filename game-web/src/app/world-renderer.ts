@@ -47,8 +47,20 @@ interface Sprite {
   width: number;
   height: number;
   actions: Map<string, SpriteFrame[]>;
+  pixels: Uint8ClampedArray;
 }
 interface Actor extends GameEntity { direction: 'up' | 'down' | 'left' | 'right' }
+interface HitRegion {
+  id: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  circle?: boolean;
+  sprite?: Sprite;
+  sx?: number;
+  sy?: number;
+}
 
 const number = (value: string | null, fallback = 0): number => {
   const parsed = Number(value);
@@ -159,6 +171,11 @@ async function loadSprite(path: string): Promise<Sprite> {
   const source = set.getAttribute('src')?.split('|')[0];
   if (!source) throw new Error(`Sprite ${path} sin PNG.`);
   const graphic = await image(`/assets/${source}`);
+  const sample = document.createElement('canvas');
+  sample.width = graphic.width; sample.height = graphic.height;
+  const sampleContext = sample.getContext('2d')!;
+  sampleContext.drawImage(graphic, 0, 0);
+  const pixels = sampleContext.getImageData(0, 0, graphic.width, graphic.height).data;
   const actions = new Map<string, SpriteFrame[]>();
   root.querySelectorAll(':scope > action').forEach(action => {
     action.querySelectorAll(':scope > animation').forEach(animation => {
@@ -178,7 +195,7 @@ async function loadSprite(path: string): Promise<Sprite> {
     });
   });
   return { image: graphic, width: number(set.getAttribute('width')),
-    height: number(set.getAttribute('height')), actions };
+    height: number(set.getAttribute('height')), actions, pixels };
 }
 
 export class WorldRenderer {
@@ -198,6 +215,8 @@ export class WorldRenderer {
   private cameraY = 0;
   private cssWidth = 1;
   private cssHeight = 1;
+  private hitRegions: HitRegion[] = [];
+  private readonly resizeObserver: ResizeObserver;
   private readonly onResize = () => this.resize();
 
   constructor(canvas: HTMLCanvasElement) {
@@ -205,6 +224,9 @@ export class WorldRenderer {
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('El navegador no permite Canvas 2D.');
     this.ctx = ctx;
+    // Showing the sidebar changes the canvas size without a window resize.
+    this.resizeObserver = new ResizeObserver(() => this.resize());
+    this.resizeObserver.observe(canvas);
     window.addEventListener('resize', this.onResize);
     this.resize();
     this.frame = requestAnimationFrame(this.draw);
@@ -212,11 +234,13 @@ export class WorldRenderer {
 
   destroy(): void {
     cancelAnimationFrame(this.frame);
+    this.resizeObserver.disconnect();
     window.removeEventListener('resize', this.onResize);
   }
 
   async enter(mapName: string, x: number, y: number, id: number, name: string, mask = 1): Promise<string> {
     this.gameMap = null;
+    this.hitRegions = [];
     this.self = { id, kind: 'player', x, y, direction: 'down', name };
     this.entities.clear();
     this.selectedId = null;
@@ -271,23 +295,31 @@ export class WorldRenderer {
     return { x, y };
   }
 
-  hit(clientX: number, clientY: number): { entity?: GameEntity; tile?: { x: number; y: number } } {
+  hit(clientX: number, clientY: number): { entity?: GameEntity; tile?: { x: number; y: number }; blocked?: boolean } {
     const map = this.gameMap;
     if (!map) return {};
     const box = this.canvas.getBoundingClientRect();
-    const px = clientX - box.left + this.cameraX;
-    const py = clientY - box.top + this.cameraY;
-    let nearest: Actor | undefined;
-    let best = 28 * 28;
-    for (const entity of this.entities.values()) {
-      const dx = px - (entity.x + .5) * map.tw;
-      const dy = py - (entity.y + .5) * map.th;
-      const distance = dx * dx + dy * dy;
-      if (distance < best) { best = distance; nearest = entity; }
+    if (!box.width || !box.height) return {};
+    // Convert screen coordinates to the logical pixels used for drawing,
+    // independently of CSS scaling, browser zoom and device pixel ratio.
+    const px = (clientX - box.left) * this.cssWidth / box.width;
+    const py = (clientY - box.top) * this.cssHeight / box.height;
+    if (px < 0 || py < 0 || px >= this.cssWidth || py >= this.cssHeight) return {};
+    for (let index = this.hitRegions.length - 1; index >= 0; index--) {
+      const region = this.hitRegions[index];
+      const dx = px - region.x, dy = py - region.y;
+      if (dx < 0 || dy < 0 || dx >= region.width || dy >= region.height) continue;
+      if (region.circle && Math.hypot(dx - region.width / 2, dy - region.height / 2) > region.width / 2) continue;
+      if (region.sprite) {
+        const source = ((region.sy! + Math.floor(dy)) * region.sprite.image.width + region.sx! + Math.floor(dx)) * 4;
+        if (region.sprite.pixels[source + 3] < 32) continue;
+      }
+      const entity = this.entities.get(region.id);
+      if (entity) { this.selectedId = entity.id; return { entity }; }
     }
-    if (nearest) { this.selectedId = nearest.id; return { entity: nearest }; }
-    const x = Math.floor(px / map.tw), y = Math.floor(py / map.th);
-    return this.walkable(x, y) ? { tile: { x, y } } : {};
+    this.selectedId = null;
+    const x = Math.floor((px + this.cameraX) / map.tw), y = Math.floor((py + this.cameraY) / map.th);
+    return this.walkable(x, y) ? { tile: { x, y } } : { blocked: true };
   }
 
   private walkable(x: number, y: number): boolean {
@@ -311,9 +343,8 @@ export class WorldRenderer {
   }
 
   private resize(): void {
-    const rect = this.canvas.getBoundingClientRect();
-    this.cssWidth = Math.max(1, rect.width);
-    this.cssHeight = Math.max(1, rect.height);
+    this.cssWidth = Math.max(1, this.canvas.clientWidth);
+    this.cssHeight = Math.max(1, this.canvas.clientHeight);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.canvas.width = Math.round(this.cssWidth * dpr);
     this.canvas.height = Math.round(this.cssHeight * dpr);
@@ -324,6 +355,7 @@ export class WorldRenderer {
   private draw = (now: number): void => {
     this.frame = requestAnimationFrame(this.draw);
     const ctx = this.ctx;
+    this.hitRegions = [];
     ctx.fillStyle = '#121f21';
     ctx.fillRect(0, 0, this.cssWidth, this.cssHeight);
     const map = this.gameMap;
@@ -429,9 +461,12 @@ export class WorldRenderer {
         const columns = Math.floor(sprite.image.width / sprite.width);
         const sx = (selected.index % columns) * sprite.width;
         const sy = Math.floor(selected.index / columns) * sprite.height;
+        const dx = Math.round(x - sprite.width / 2 + selected.ox);
+        const dy = Math.round(y - sprite.height + selected.oy);
         this.ctx.drawImage(sprite.image, sx, sy, sprite.width, sprite.height,
-          Math.round(x - sprite.width / 2 + selected.ox), Math.round(y - sprite.height + selected.oy),
-          sprite.width, sprite.height);
+          dx, dy, sprite.width, sprite.height);
+        if (!self) this.hitRegions.push({ id: actor.id, x: dx, y: dy,
+          width: sprite.width, height: sprite.height, sprite, sx, sy });
       }
     } else {
       // NPCs have multiple dyed equipment sprites; identify them clearly until composed sprites are supported.
@@ -441,6 +476,7 @@ export class WorldRenderer {
       this.ctx.strokeStyle = color; this.ctx.lineWidth = 2; this.ctx.stroke();
       this.ctx.fillStyle = color; this.ctx.font = 'bold 17px sans-serif';
       this.ctx.textAlign = 'center'; this.ctx.fillText(actor.kind === 'npc' ? '!' : actor.kind === 'item' ? '◆' : '✦', x, y - 11);
+      if (!self) this.hitRegions.push({ id: actor.id, x: x - 19, y: y - 36, width: 38, height: 38, circle: true });
     }
     if (actor.name) {
       this.ctx.font = 'bold 11px system-ui, sans-serif';
@@ -451,6 +487,8 @@ export class WorldRenderer {
       this.ctx.fillRect(x - width / 2, y - (sprite?.height ?? 42) - 16, width, 17);
       this.ctx.fillStyle = self ? '#e8d8a8' : '#e5f0e9';
       this.ctx.fillText(label, x, y - (sprite?.height ?? 42) - 4);
+      if (!self) this.hitRegions.push({ id: actor.id, x: x - width / 2,
+        y: y - (sprite?.height ?? 42) - 16, width, height: 17 });
     }
     if (actor.maxHp && actor.hp !== undefined && actor.hp < actor.maxHp) {
       const ratio = Math.max(0, Math.min(1, actor.hp / actor.maxHp));

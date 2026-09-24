@@ -324,7 +324,7 @@ export class GameSession {
       const npcId = p.readUInt32LE(id === 0x00b4 || id === 0x00b7 ? 4 : 2);
       this.npc = npcId;
       const text = id === 0x00b4 || id === 0x00b7 ? textAt(p, 8, p.length - 8) : undefined;
-      this.emit({ type: 'dialog', id: npcId, ...(id === 0x00b7 ? { choices: text.split(':').filter(Boolean) } : {}),
+      this.emit({ type: 'dialog', id: npcId, ...(id === 0x00b7 ? { choices: text.split(':') } : {}),
         ...(id === 0x00b4 ? { text } : {}), next: id === 0x00b5, close: id === 0x00b6 });
       return;
     }
