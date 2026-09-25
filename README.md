@@ -5,9 +5,10 @@ Ubuntu 26.04 x86_64. El cliente se conecta a `127.0.0.1` y la administración
 se limita a esa dirección con una clave generada durante la instalación.
 Incluye una primera traducción automática al español de los diálogos de NPC.
 
-> **Estado:** las fuentes y los scripts se han preparado y comprobado, pero
-> todavía falta probar la compilación completa y una sesión de juego en
-> Ubuntu 26.04. La traducción de NPC necesita revisión de estilo y contexto.
+> **Estado de v0.2.4:** TMWA se compiló para contrastar el protocolo. El cliente
+> web cuenta con pruebas automatizadas con servidores TCP simulados y respuestas
+> WebSocket simuladas. **Aún no se ha validado una partida real completa en
+> Ubuntu 26.04.** La traducción de NPC necesita revisión de estilo y contexto.
 
 ## Cliente web jugable (v0.2.4)
 
@@ -267,11 +268,28 @@ colisiones con `make -C sources/serverdata maps`.
 - Si cambias de copia del proyecto, recuerda que `instalado/` pertenece a la
   copia en que compilaste.
 
-Durante la preparación se comprobó la compilación de TMWA, la generación de
-mapas y configuraciones, la sintaxis de los scripts, la reconstrucción de los
-parches y un clon público del repositorio. Las pruebas locales se realizaron
-en un entorno Ubuntu 24.04; el cliente gráfico, Docker y la sesión completa
-en Ubuntu 26.04 siguen pendientes de verificación en un equipo con ese sistema.
+Las comprobaciones iniciales de preparación se realizaron en un entorno
+Ubuntu 24.04 e incluyeron la generación de mapas y configuraciones, la sintaxis
+de los scripts, la reconstrucción de los parches y un clon público del
+repositorio.
+
+La validación documentada de **v0.2.4** en
+[la guía del cliente web](game-web/README.md#desarrollo-y-pruebas) incluye:
+
+| Pruebas | Cantidad | Alcance |
+| --- | --- | --- |
+| Protocolo, pasarela y movimiento | 15 | Paquetes, flujo de sesión frente a servidores TCP simulados y lógica de movimiento. |
+| Interfaz en Chromium | 12 | Respuestas WebSocket simuladas, incluidos escenarios con los mapas y recursos originales. |
+| Preparador de español | 4 | Repetición, metadatos Git de submódulos y conservación de cuentas y cambios personales en datos de prueba. |
+
+En esa validación se compiló TMWA para contrastar el protocolo, pero no se
+pudo ejecutar en el entorno de pruebas: solo ofrecía `root` y TMWA exige un
+usuario normal. Las pruebas TCP usan servidores simulados y las de Chromium
+respuestas WebSocket simuladas; no constituyen una sesión contra TMWA real.
+
+**Aún no se ha validado una partida real completa con los tres procesos de
+TMWA (login, personajes y mapa) en Ubuntu 26.04.** El cliente gráfico nativo
+y Docker también siguen pendientes de verificación en ese sistema.
 
 ## Procedencia y licencias
 
