@@ -1,14 +1,17 @@
 /** Browser renderer for the pinned The Mana World TMX/TSX client data. */
 import { Tile, WalkingMotion, walkingPath } from './movement';
+import { NpcSpriteLibrary, npcFrame, NpcSpriteReference, SpriteDirection, SpriteSheet } from './npc-sprites';
 export interface GameEntity {
   id: number;
-  kind: 'player' | 'npc' | 'monster' | 'item';
+  kind: 'player' | 'npc' | 'monster' | 'item' | 'unknown';
   job?: number;
   x: number;
   y: number;
   name?: string;
   hp?: number;
   maxHp?: number;
+  facing?: SpriteDirection;
+  npcSprites?: NpcSpriteReference[] | null;
 }
 
 interface TileFrame { tileid: number; duration: number }
@@ -50,7 +53,7 @@ interface Sprite {
   actions: Map<string, SpriteFrame[]>;
   pixels: Uint8ClampedArray;
 }
-interface Actor extends GameEntity { direction: 'up' | 'down' | 'left' | 'right' }
+interface Actor extends GameEntity { direction: SpriteDirection; animationStart?: number }
 interface HitRegion {
   id: number;
   x: number;
@@ -58,7 +61,7 @@ interface HitRegion {
   width: number;
   height: number;
   circle?: boolean;
-  sprite?: Sprite;
+  sprite?: Sprite | SpriteSheet;
   sx?: number;
   sy?: number;
 }
@@ -206,6 +209,7 @@ export class WorldRenderer {
   private gameMap: WorldMap | null = null;
   private avatar: Sprite | null = null;
   private maggot: Sprite | null = null;
+  private npcSprites = new NpcSpriteLibrary();
   private entities = new Map<number, Actor>();
   private self: Actor = { id: -1, kind: 'player', x: 22, y: 24, direction: 'down' };
   private selectedId: number | null = null;
@@ -248,6 +252,7 @@ export class WorldRenderer {
     this.self = { id, kind: 'player', x, y, direction: 'down', name };
     this.motion.reset({ x, y });
     this.entities.clear();
+    this.npcSprites = new NpcSpriteLibrary(); // Bound memory and failed-load cache to this map.
     this.selectedId = null;
     const [map, avatar, maggot] = await Promise.all([
       loadMap(mapName), loadSprite('races/human-male').catch(() => null),
@@ -301,9 +306,12 @@ export class WorldRenderer {
     const previous = this.entities.get(entity.id);
     if (!previous && (entity.kind === undefined || entity.x === undefined || entity.y === undefined)) return;
     const x = entity.x ?? previous!.x, y = entity.y ?? previous!.y;
-    const direction = previous ? this.direction(previous.x, previous.y, x, y, previous.direction) : 'down';
+    const direction = entity.facing ?? (previous ? this.direction(previous.x, previous.y, x, y, previous.direction) : 'down');
+    const changed = !previous || previous.job !== entity.job && entity.job !== undefined ||
+      entity.npcSprites !== undefined && JSON.stringify(entity.npcSprites) !== JSON.stringify(previous.npcSprites);
     this.entities.set(entity.id, { ...previous, ...entity,
-      kind: entity.kind ?? previous!.kind, x, y, direction });
+      kind: entity.kind ?? previous!.kind, x, y, direction,
+      animationStart: changed ? performance.now() : previous.animationStart });
   }
 
   removeEntity(id: number): void {
@@ -467,16 +475,37 @@ export class WorldRenderer {
     const self = actor.id === this.self.id;
     const sprite = actor.kind === 'monster' && actor.job === 1002 ? this.maggot :
       actor.kind === 'player' ? this.avatar : null;
+    const npc = actor.kind === 'npc' && actor.npcSprites ? this.npcSprites.peek(actor.npcSprites) : null;
+    let labelTop = y - (sprite?.height ?? 42);
     if (actor.id === this.selectedId) {
       this.ctx.strokeStyle = actor.kind === 'monster' ? '#e89574' : '#eec979';
       this.ctx.lineWidth = 2;
       this.ctx.beginPath(); this.ctx.ellipse(x, y - 6, 22, 9, 0, 0, Math.PI * 2); this.ctx.stroke();
     }
-    if (sprite) {
+    if (npc) {
+      // ActorSprite adds spriteOffsetY=16 (paths default); CompoundSprite draws
+      // each layer centered at its own width, bottom aligned, in XML order.
+      labelTop = y;
+      for (const layer of npc) {
+        const frame = npcFrame(layer, actor.direction, now - (actor.animationStart ?? now));
+        const sheet = frame.sheet, columns = Math.floor(sheet.image.width / sheet.width);
+        const sx = (frame.index % columns) * sheet.width;
+        const sy = Math.floor(frame.index / columns) * sheet.height;
+        const dx = Math.round(x - Math.floor(sheet.width / 2) + frame.ox);
+        const dy = Math.round(y - sheet.height + frame.oy);
+        labelTop = Math.min(labelTop, dy);
+        this.ctx.drawImage(sheet.image, sx, sy, sheet.width, sheet.height, dx, dy, sheet.width, sheet.height);
+        this.hitRegions.push({ id: actor.id, x: dx, y: dy, width: sheet.width,
+          height: sheet.height, sprite: sheet, sx, sy });
+      }
+    } else if (sprite) {
       const action = self && now < this.attackingUntil ? 'attack' :
         self && this.motion.active ? 'walk' : 'stand';
+      const fallbackDirection = actor.direction.startsWith('up') ? 'up' :
+        actor.direction.startsWith('down') ? 'down' : actor.direction;
       const frames = sprite.actions.get(`${action}:${actor.direction}`) ??
-        sprite.actions.get(`stand:${actor.direction}`) ?? [];
+        sprite.actions.get(`${action}:${fallbackDirection}`) ??
+        sprite.actions.get(`stand:${fallbackDirection}`) ?? [];
       if (frames.length) {
         const duration = frames.reduce((sum, frame) => sum + frame.delay, 0);
         let tick = (action === 'attack' ? now - this.actionStart : now) % duration;
@@ -497,7 +526,7 @@ export class WorldRenderer {
           width: sprite.width, height: sprite.height, sprite, sx, sy });
       }
     } else {
-      // NPCs have multiple dyed equipment sprites; identify them clearly until composed sprites are supported.
+      // Missing/unsupported NPC definitions and pending loads keep the marker.
       const color = actor.kind === 'monster' ? '#b77b68' : actor.kind === 'item' ? '#ebc86b' : '#84bcb4';
       this.ctx.fillStyle = 'rgba(12,25,26,.72)';
       this.ctx.beginPath(); this.ctx.arc(x, y - 17, 17, 0, Math.PI * 2); this.ctx.fill();
@@ -512,11 +541,11 @@ export class WorldRenderer {
       const label = actor.name.slice(0, 22);
       const width = this.ctx.measureText(label).width + 12;
       this.ctx.fillStyle = 'rgba(8,19,23,.8)';
-      this.ctx.fillRect(x - width / 2, y - (sprite?.height ?? 42) - 16, width, 17);
+      this.ctx.fillRect(x - width / 2, labelTop - 16, width, 17);
       this.ctx.fillStyle = self ? '#e8d8a8' : '#e5f0e9';
-      this.ctx.fillText(label, x, y - (sprite?.height ?? 42) - 4);
+      this.ctx.fillText(label, x, labelTop - 4);
       if (!self) this.hitRegions.push({ id: actor.id, x: x - width / 2,
-        y: y - (sprite?.height ?? 42) - 16, width, height: 17 });
+        y: labelTop - 16, width, height: 17 });
     }
     if (actor.maxHp && actor.hp !== undefined && actor.hp < actor.maxHp) {
       const ratio = Math.max(0, Math.min(1, actor.hp / actor.maxHp));

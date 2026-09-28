@@ -1,6 +1,7 @@
 import net from 'node:net';
 import { PacketDecoder, destination, destinationAt, fixedString, packet, positionAt, textAt, validInt } from './protocol.mjs';
 import { inventoryWithMetadata } from './item-metadata.mjs';
+import { readBeingAppearance } from './being-appearance.mjs';
 
 const idPacket = (id, target, size = 6) => {
   const out = packet(id, size);
@@ -31,10 +32,11 @@ const connectionErrors = {
 
 export class GameSession {
   constructor(ws, lengths, ports = { login: 6901, char: 6122, map: 5122 },
-    { replyTimeoutMs = 15000, itemMetadata = new Map() } = {}) {
+    { replyTimeoutMs = 15000, itemMetadata = new Map(), npcMetadata = new Map() } = {}) {
     this.ws = ws;
     this.lengths = lengths;
     this.ports = ports;
+    this.npcMetadata = npcMetadata;
     this.phase = 'idle';
     this.socket = null;
     this.token = null;
@@ -323,14 +325,15 @@ export class GameSession {
       return;
     }
     if (id === 0x0078 || id === 0x007b || id === 0x01d8 || id === 0x01d9 || id === 0x01da) {
-      const entityId = p.readUInt32LE(2);
-      const job = p.readUInt16LE(14);
-      const pair = id === 0x007b || id === 0x01da;
-      const coords = pair ? destinationAt(p, 50)
-        : positionAt(p, 46);
-      const kind = job >= 1000 ? 'monster' : job >= 40 ? 'npc' : 'player';
-      this.emit({ type: 'entity', id: entityId, kind, job, ...coords,
-        ...(id === 0x0078 || id === 0x007b ? { hp: p.readUInt32LE(id === 0x007b ? 36 : 32), maxHp: p.readUInt32LE(id === 0x007b ? 40 : 36) } : {}) });
+      const entity = readBeingAppearance(id, p);
+      const { id: entityId, kind } = entity;
+      if (kind === 'portal' || entity.job === 0 && entityId >= 110000000) return;
+      // Being::updatePlayerSprites does nothing for NPCs. Their full display
+      // comes from NPCDB; do not overlay the player slots parsed above.
+      const supported = kind === 'npc' && entity.stance === 'stand' &&
+        Object.values(entity.appearance.options).every(value => value === 0);
+      this.emit({ type: 'entity', ...entity,
+        npcSprites: supported ? this.npcMetadata.get(entity.job) ?? null : null });
       if ((kind === 'player' || kind === 'npc') && !this.names.has(entityId)) {
         this.names.add(entityId);
         this.send(idPacket(0x0094, entityId));

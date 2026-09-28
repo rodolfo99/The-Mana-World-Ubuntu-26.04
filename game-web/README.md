@@ -1,4 +1,4 @@
-# Cliente jugable Angular para The Mana World (v0.2.5)
+# Cliente jugable Angular para The Mana World (v0.2.6)
 
 Esta aplicación es independiente de `admin-web/`. Conserva el servidor TMWA
 y los datos del mundo de este repositorio; un servicio Node local convierte
@@ -37,13 +37,13 @@ instala dependencias con `npm ci` y compila Angular. El servidor TMWA usa
 con `GAME_WEB_PORT=3021 ./scripts/juego-web.sh` si 3020 está ocupado.
 Node.js compatible: 22.22.3+, 24.15+ o 26+.
 
-## Actualizar a 0.2.5: nombres e iconos del inventario
+## Actualizar a 0.2.6: gráficos originales de NPC
 
-Esta versión incorpora la [PR #3](https://github.com/rodolfo99/The-Mana-World-Ubuntu-26.04/pull/3),
-fusionada el 28 de septiembre de 2026: carga segura de nombres e iconos
-originales desde `client-data`, con el ID visible y fallbacks independientes
-cuando faltan datos. Conserva las correcciones de movimiento y diálogos de
-las versiones anteriores; consulta [el alcance del inventario](#nombres-e-iconos-del-inventario).
+Esta versión incorpora la [PR #5](https://github.com/rodolfo99/The-Mana-World-Ubuntu-26.04/pull/5):
+composición de NPC con las capas, tintes y variantes originales de `npcs.xml`.
+Conserva el marcador cuando falta información o una función no está soportada.
+Incluye las mejoras previas de inventario, movimiento y diálogos. Consulta
+[las reglas verificadas y los límites](NPC-RENDERING.md).
 
 Detén **el cliente web** con `Ctrl+C`. Desde **la carpeta de tu instalación
 actual**, guarda antes cualquier cambio propio en `game-web`, `scripts`,
@@ -56,21 +56,27 @@ git restore --source=origin/main -- game-web scripts localizacion README.md
 ```
 
 El arranque instala las dependencias del lockfile con `npm ci` y recompila
-Angular al detectar los archivos actualizados, incluida la dependencia XML
-`saxes`. Recarga http://127.0.0.1:3020 con `Ctrl+Shift+R` y comprueba que el pie
-indique `WEB 0.2.5`. El reinicio de la pasarela vuelve a cargar `items.xml` y
-sus inclusiones.
+Angular al detectar los archivos actualizados. Recarga http://127.0.0.1:3020
+con `Ctrl+Shift+R` y comprueba que el pie indique `WEB 0.2.6`. El reinicio de
+la pasarela vuelve a leer `items.xml`, `npcs.xml` y sus inclusiones.
 
 La actualización conserva las cuentas, personajes y configuraciones de
 `sources/serverdata`; no cambia los commits fijados de los submódulos ni
-requiere recompilar o reiniciar TMWA al venir de 0.2.4. Si vienes de una
+requiere recompilar o reiniciar TMWA al venir de 0.2.4/0.2.5. Si vienes de una
 versión con NPC todavía en inglés, sigue también [la recuperación del español](#recuperar-el-español-y-corregir-el-ratón-022)
 y reinicia el servidor desde esa misma instalación.
 
-Para generar el ZIP completo, sigue [el empaquetado de v0.2.5](../README.md#empaquetar-v025)
+Para generar el ZIP completo, sigue [el empaquetado de v0.2.6](../README.md#empaquetar-v026)
 en un clon separado. El nombre por defecto y la carpeta interna son
-`The-Mana-World-Ubuntu-26.04-angular-v0.2.5`; el archivo termina en `.zip`.
+`The-Mana-World-Ubuntu-26.04-angular-v0.2.6`; el archivo termina en `.zip`.
 El ZIP automático de GitHub sigue sin incluir los submódulos.
+
+## Actualizar a 0.2.5: nombres e iconos del inventario
+
+La versión 0.2.5 incorporó la [PR #3](https://github.com/rodolfo99/The-Mana-World-Ubuntu-26.04/pull/3):
+nombres e iconos originales del inventario, con ID visible y fallbacks cuando
+faltan datos. Esta mejora se conserva en 0.2.6. Para actualizar desde una
+instalación anterior, utiliza [los pasos actuales](#actualizar-a-026-gráficos-originales-de-npc).
 
 ## Actualizar a 0.2.4: velocidad del ratón
 
@@ -92,7 +98,7 @@ git restore --source=origin/main -- game-web scripts localizacion README.md
 ```
 
 Recarga http://127.0.0.1:3020 con `Ctrl+Shift+R` y comprueba que el pie indique
-`WEB 0.2.5` al actualizar desde el `main` actual. No requiere recompilar TMWA.
+`WEB 0.2.6` al actualizar desde el `main` actual. No requiere recompilar TMWA.
 Estos comandos conservan las cuentas y personajes de `sources/serverdata`;
 guarda antes tus modificaciones propias
 en las rutas que se actualizan. Si todavía usabas datos NPC en inglés de una
@@ -125,7 +131,7 @@ En otra terminal de **esa misma carpeta**:
 ```
 
 Abre http://127.0.0.1:3020 y recarga con `Ctrl+Shift+R`. El pie muestra
-`WEB 0.2.5` al actualizar desde el `main` actual. El arranque web comprueba
+`WEB 0.2.6` al actualizar desde el `main` actual. El arranque web comprueba
 también los parches NPC e indica la carpeta de datos. Es necesario reiniciar
 TMWA: los diálogos se cargan en
 memoria al arrancar. Si sigues ejecutando el servidor desde otra copia,
@@ -216,8 +222,8 @@ Recarga `http://127.0.0.1:3020` con `Ctrl+Shift+R`. El servidor TMWA puede
 seguir encendido; no hace falta repetir la instalación de sus binarios.
 
 El ZIP completo 0.2.0 incluía metadatos Git, por lo que también admite esos
-comandos. Si obtuviste una copia sin Git, genera el ZIP completo 0.2.5
-siguiendo [las instrucciones de empaquetado](../README.md#empaquetar-v025).
+comandos. Si obtuviste una copia sin Git, genera el ZIP completo 0.2.6
+siguiendo [las instrucciones de empaquetado](../README.md#empaquetar-v026).
 
 La causa corregida era la actualización de la interfaz: Angular 22 utiliza
 por defecto detección de cambios sin Zone.js y estrategia OnPush. Los eventos
@@ -244,12 +250,22 @@ personajes, creación, selección y entrada al mapa tienen un límite de 15 segu
 | Combate | Seleccionar monstruo, atacar y detener ataque; TMWA decide el resultado. |
 | Inventario | Ver nombres e iconos originales, ID y cantidad; usar, equipar y quitar. |
 
-Un NPC puede combinar varios sprites con tintes y equipamiento; esta versión
-lo marca en el mapa con un indicador hasta implementar esa composición.
+Los NPC con definiciones compatibles en `npcs.xml` se dibujan con sus capas,
+tintes, variantes y desplazamientos originales, incluido el equipamiento ya
+declarado en esas capas. No se superponen los slots de equipo de jugador.
+Si falta una definición, XML, PNG o paleta necesaria, o aparece una función
+no soportada, se conserva el indicador completo. También se mantiene durante
+la carga: nunca se muestra una composición parcial. Los píxeles visibles y
+el nombre siguen permitiendo hablar con el NPC.
+Consulta [la semántica de los paquetes, las reglas y el alcance](NPC-RENDERING.md).
 Las imágenes base de jugador y la criatura Maggot se cargan desde los datos
 originales. Algunas opciones avanzadas del cliente
 nativo, como comercio, almacenamiento, misiones y efectos complejos, siguen
 fuera de esta versión.
+
+El renderizado de NPC forma parte de 0.2.6. Para incorporarlo a una
+instalación existente, sigue [la actualización desde main](#actualizar-a-026-gráficos-originales-de-npc).
+El reinicio de la pasarela recarga el catálogo sin recompilar TMWA.
 
 ## Nombres e iconos del inventario
 
@@ -340,6 +356,16 @@ de acceso y desconexión. Usa respuestas simuladas y carga el mapa original
 `029-2` desde los recursos locales; comprueba que la vista cambie sin otro clic.
 El navegador puede indicarse con `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` y el
 puerto de pruebas con `GAME_WEB_TEST_PORT` (31320 por defecto).
+La suite de NPC usa `NPC_WEB_TEST_PORT` (31321 por defecto). `test:ui` ejecuta
+ambas suites; sus servidores solo escuchan en `127.0.0.1`.
+
+Las pruebas de NPC comprueban las dos familias de los cinco paquetes,
+campos de apariencia, HP, direcciones, mensajes fragmentados y clasificación
+de NPC/portal/jugador. En Chromium cargan las seis capas de Sorfina y una
+variante de atlas originales; verifican tintes exactos, herencia de imágenes,
+offsets XML, clics sobre píxeles/nombres, transparencias, archivos faltantes,
+cambios de aspecto y descargas tardías tras retirar un NPC o cambiar de mapa.
+El [informe de renderizado](NPC-RENDERING.md#validación) registra el alcance.
 
 Las pruebas de inventario (`tests/item-metadata.test.mjs`) cubren inclusiones
 recursivas, nombres e imágenes del catálogo original, escapes XML, campos
@@ -349,7 +375,14 @@ cantidades, equipamiento y comandos por espacio. Las pruebas de navegador
 comprueban los iconos reales, el fallback de descarga, la presentación segura
 de nombres y la actualización de los botones sin clics adicionales.
 
-Validación de v0.2.5 (2026-09-28): `npm test` pasó las 24 pruebas y
+Validación de v0.2.6 (2026-09-28): `npm test` pasó las 35 pruebas y
+`npm run test:ui` pasó las 23 pruebas, con compilación de producción. Las
+cuatro pruebas del preparador de español también pasaron. Se verificó con
+datos temporales el nombre y la carpeta de empaquetado v0.2.6, las exclusiones
+y el rechazo de salidas dentro del repositorio. No se generó un ZIP completo
+en esta validación. Los submódulos mantienen sus commits fijados.
+
+Validación previa de v0.2.5 (2026-09-28): `npm test` pasó las 24 pruebas y
 `npm run build` generó la compilación de producción. `npm run test:ui` pasó
 las 15 pruebas, incluidas las tres de inventario añadidas en la PR #3.
 Se ejecutaron en Ubuntu 24.04 con Node.js 24.19.0 y Chromium 153 mediante
