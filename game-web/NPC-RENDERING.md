@@ -1,8 +1,9 @@
 # Renderizado de NPC con los recursos originales
 
 Esta mejora compone la animación **stand** de los NPC que se pueden resolver
-por completo desde los datos fijados. No cambia la versión 0.2.5 ni los
-submódulos. No incorpora gráficos, nombres, capas ni tintes inventados.
+por completo desde los datos fijados. Forma parte de la versión 0.2.6 y
+conserva los commits de los submódulos. No incorpora gráficos, nombres, capas
+ni tintes inventados.
 
 ## Fuentes de las reglas
 

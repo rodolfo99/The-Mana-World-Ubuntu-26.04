@@ -5,12 +5,12 @@ Ubuntu 26.04 x86_64. El cliente se conecta a `127.0.0.1` y la administración
 se limita a esa dirección con una clave generada durante la instalación.
 Incluye una primera traducción automática al español de los diálogos de NPC.
 
-> **Estado de v0.2.5:** TMWA se compiló para contrastar el protocolo. El cliente
+> **Estado de v0.2.6:** TMWA se compiló para contrastar el protocolo. El cliente
 > web cuenta con pruebas automatizadas con servidores TCP simulados y respuestas
 > WebSocket simuladas. **Aún no se ha validado una partida real completa en
 > Ubuntu 26.04.** La traducción de NPC necesita revisión de estilo y contexto.
 
-## Cliente web jugable (v0.2.5)
+## Cliente web jugable (v0.2.6)
 
 `game-web/` incorpora un cliente Angular 22 separado del panel administrativo
 `admin-web/`. Se conecta al mismo servidor TMWA por una pasarela local y
@@ -19,7 +19,8 @@ acceso y registro, personajes, movimiento, chat, diálogos NPC, combate e
 inventario. Consulta [la guía del cliente web](game-web/README.md) para
 funciones, limitaciones, pruebas y seguridad.
 
-La mejora de renderizado de NPC compone sus capas, tintes y variantes desde
+La versión 0.2.6 incorpora la [mejora de NPC de la PR #5](https://github.com/rodolfo99/The-Mana-World-Ubuntu-26.04/pull/5):
+compone sus capas, tintes y variantes desde
 `npcs.xml` y los PNG originales, siguiendo los fuentes fijados de Mana.
 Incluye, por ejemplo, las seis capas de Sorfina. Conserva el marcador cuando
 una composición está pendiente, incompleta o fuera del alcance implementado.
@@ -32,7 +33,7 @@ y sus inclusiones locales. Conserva el ID visible y usa `Objeto <ID>` o `✦` si
 falta información. Valida las rutas y los archivos antes de usarlos; los
 iconos con tintes muestran por ahora su imagen base. Consulta el
 [alcance y la actualización del inventario](game-web/README.md#nombres-e-iconos-del-inventario).
-Para una instalación existente, sigue [la actualización a 0.2.5](game-web/README.md#actualizar-a-025-nombres-e-iconos-del-inventario)
+Para una instalación existente, sigue [la actualización a 0.2.6](game-web/README.md#actualizar-a-026-gráficos-originales-de-npc)
 desde la carpeta donde ya tienes tus cuentas; no cambia los commits fijados
 de los submódulos.
 
@@ -40,7 +41,7 @@ La versión 0.2.4 corrige el salto al destino al caminar con el ratón: el
 personaje y la cámara recorren las casillas a la velocidad indicada por TMWA.
 Los clics consecutivos conservan el avance del paso actual; las flechas usan
 la misma animación. Un cambio de mapa, también entre habitaciones del mismo
-mapa, cancela el recorrido anterior. Estas correcciones se conservan en 0.2.5.
+mapa, cancela el recorrido anterior. Estas correcciones se conservan en 0.2.6.
 
 La versión 0.2.3 corrige el cierre y la cancelación de diálogos que podían
 dejar al servidor esperando una respuesta, conserva todas las líneas de cada
@@ -71,11 +72,11 @@ Con el servidor instalado y encendido en otra terminal:
 
 Abre `http://127.0.0.1:3020` en esta computadora.
 
-### Empaquetar v0.2.5
+### Empaquetar v0.2.6
 
 Para generar un ZIP con los fuentes, mapas, gráficos, música y metadatos
 mínimos necesarios para compilar, usa un clon separado de tu instalación de
-juego. Desde la raíz de ese clon actualizado a v0.2.5:
+juego. Desde la raíz de ese clon actualizado a v0.2.6:
 
 ```bash
 git submodule update --init --recursive
@@ -85,8 +86,8 @@ python3 scripts/empaquetar-completo.py
 La inicialización usa los commits fijados en el repositorio, sin `--remote`;
 no actualiza los submódulos a sus últimas versiones. El empaquetador comprueba
 los recursos y aplica los parches de español existentes antes de crear el ZIP.
-La salida es `../The-Mana-World-Ubuntu-26.04-angular-v0.2.5.zip`, con una carpeta
-interna `The-Mana-World-Ubuntu-26.04-angular-v0.2.5/`. Puedes pasar una ruta de
+La salida es `../The-Mana-World-Ubuntu-26.04-angular-v0.2.6.zip`, con una carpeta
+interna `The-Mana-World-Ubuntu-26.04-angular-v0.2.6/`. Puedes pasar una ruta de
 salida como primer argumento del script; debe quedar fuera del repositorio.
 El ZIP excluye cuentas, personajes guardados, claves locales y carpetas de
 compilación. Extrae el ZIP
@@ -300,19 +301,19 @@ Ubuntu 24.04 e incluyeron la generación de mapas y configuraciones, la sintaxis
 de los scripts, la reconstrucción de los parches y un clon público del
 repositorio.
 
-La validación automatizada de **v0.2.5** (2026-09-28), documentada en
+La validación automatizada de **v0.2.6** (2026-09-28), documentada en
 [la guía del cliente web](game-web/README.md#desarrollo-y-pruebas) incluye:
 
 | Pruebas | Cantidad | Alcance |
 | --- | --- | --- |
-| Protocolo, pasarela, movimiento e inventario | 24 | Paquetes, sesión TCP simulada, movimiento y carga segura del catálogo original. |
-| Interfaz en Chromium | 15 | Respuestas WebSocket simuladas, mapas originales, nombres, iconos y fallbacks del inventario. |
+| Protocolo, pasarela, movimiento y catálogos | 35 | Apariencia de NPC, sesión TCP simulada, movimiento, catálogos, tintes y fallbacks. |
+| Interfaz en Chromium | 23 | Composición original de NPC, selección, descargas tardías y regresiones de mapas, diálogos e inventario. |
 | Preparador de español | 4 | Repetición, metadatos Git de submódulos y conservación de cuentas y cambios personales en datos de prueba. |
 
 También se verificó la compilación de producción del cliente web. Los
-commits fijados de los submódulos se mantienen respecto de la PR #3.
+commits fijados de los submódulos se mantienen respecto de v0.2.5.
 
-Para la mejora posterior de NPC se verifican además los cinco paquetes de
+Para la mejora de NPC se verifican los cinco paquetes de
 aparición, composición, tintes, variantes, selección por píxeles y fallback
 completo. Los resultados y la procedencia de cada regla están en
 [Renderizado de NPC](game-web/NPC-RENDERING.md#validación).
