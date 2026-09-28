@@ -6,7 +6,7 @@
     "build": "ng build",
     "start": "node backend/server.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:ui": "npm run build && node --test tests/ui.browser.mjs"
+    "test:ui": "npm run build && node --test tests/*.browser.mjs"
   },
   "dependencies": {
     "@angular/common": "22.0.0",

@@ -244,12 +244,32 @@ personajes, creación, selección y entrada al mapa tienen un límite de 15 segu
 | Combate | Seleccionar monstruo, atacar y detener ataque; TMWA decide el resultado. |
 | Inventario | Ver nombres e iconos originales, ID y cantidad; usar, equipar y quitar. |
 
-Un NPC puede combinar varios sprites con tintes y equipamiento; esta versión
-lo marca en el mapa con un indicador hasta implementar esa composición.
+Los NPC con definiciones compatibles en `npcs.xml` se dibujan con sus capas,
+tintes, variantes y desplazamientos originales, incluido el equipamiento ya
+declarado en esas capas. No se superponen los slots de equipo de jugador.
+Si falta una definición, XML, PNG o paleta necesaria, o aparece una función
+no soportada, se conserva el indicador completo. También se mantiene durante
+la carga: nunca se muestra una composición parcial. Los píxeles visibles y
+el nombre siguen permitiendo hablar con el NPC.
+Consulta [la semántica de los paquetes, las reglas y el alcance](NPC-RENDERING.md).
 Las imágenes base de jugador y la criatura Maggot se cargan desde los datos
 originales. Algunas opciones avanzadas del cliente
 nativo, como comercio, almacenamiento, misiones y efectos complejos, siguen
 fuera de esta versión.
+
+Para probar esta mejora antes de su fusión, detén el cliente web y guarda tus
+cambios propios en `game-web`. Desde la instalación existente:
+
+```bash
+git fetch --no-recurse-submodules origin feat/npc-original-sprites
+git restore --source=origin/feat/npc-original-sprites -- game-web
+./scripts/juego-web.sh
+```
+
+Recarga el navegador con `Ctrl+Shift+R`. El reinicio vuelve a leer `npcs.xml`
+y sus inclusiones. No se cambian los commits de submódulos ni se necesita
+recompilar TMWA. La versión sigue siendo 0.2.5; esta mejora no crea un nuevo
+paquete de distribución.
 
 ## Nombres e iconos del inventario
 
@@ -340,6 +360,16 @@ de acceso y desconexión. Usa respuestas simuladas y carga el mapa original
 `029-2` desde los recursos locales; comprueba que la vista cambie sin otro clic.
 El navegador puede indicarse con `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` y el
 puerto de pruebas con `GAME_WEB_TEST_PORT` (31320 por defecto).
+La suite de NPC usa `NPC_WEB_TEST_PORT` (31321 por defecto). `test:ui` ejecuta
+ambas suites; sus servidores solo escuchan en `127.0.0.1`.
+
+Las pruebas de NPC comprueban las dos familias de los cinco paquetes,
+campos de apariencia, HP, direcciones, mensajes fragmentados y clasificación
+de NPC/portal/jugador. En Chromium cargan las seis capas de Sorfina y una
+variante de atlas originales; verifican tintes exactos, herencia de imágenes,
+offsets XML, clics sobre píxeles/nombres, transparencias, archivos faltantes,
+cambios de aspecto y descargas tardías tras retirar un NPC o cambiar de mapa.
+El [informe de renderizado](NPC-RENDERING.md#validación) registra el alcance.
 
 Las pruebas de inventario (`tests/item-metadata.test.mjs`) cubren inclusiones
 recursivas, nombres e imágenes del catálogo original, escapes XML, campos

@@ -19,6 +19,12 @@ acceso y registro, personajes, movimiento, chat, diálogos NPC, combate e
 inventario. Consulta [la guía del cliente web](game-web/README.md) para
 funciones, limitaciones, pruebas y seguridad.
 
+La mejora de renderizado de NPC compone sus capas, tintes y variantes desde
+`npcs.xml` y los PNG originales, siguiendo los fuentes fijados de Mana.
+Incluye, por ejemplo, las seis capas de Sorfina. Conserva el marcador cuando
+una composición está pendiente, incompleta o fuera del alcance implementado.
+Consulta [las reglas verificadas y sus límites](game-web/NPC-RENDERING.md).
+
 La versión 0.2.5 incorpora los nombres e iconos del inventario de la
 [PR #3](https://github.com/rodolfo99/The-Mana-World-Ubuntu-26.04/pull/3),
 fusionada el 28 de septiembre de 2026. Los carga desde el `items.xml` original
@@ -305,6 +311,11 @@ La validación automatizada de **v0.2.5** (2026-09-28), documentada en
 
 También se verificó la compilación de producción del cliente web. Los
 commits fijados de los submódulos se mantienen respecto de la PR #3.
+
+Para la mejora posterior de NPC se verifican además los cinco paquetes de
+aparición, composición, tintes, variantes, selección por píxeles y fallback
+completo. Los resultados y la procedencia de cada regla están en
+[Renderizado de NPC](game-web/NPC-RENDERING.md#validación).
 
 En una validación anterior se compiló TMWA para contrastar el protocolo, pero
 no se pudo ejecutar en el entorno de pruebas: solo ofrecía `root` y TMWA exige un

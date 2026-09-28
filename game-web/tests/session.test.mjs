@@ -155,7 +155,7 @@ test('real TCP login, registration, character creation, map, movement and play c
     pos1(mob, 46, 11, 20);
     const npc = packet(0x0078, 54);
     npc.writeUInt32LE(5200, 2);
-    npc.writeUInt16LE(45, 14);
+    npc.writeUInt16LE(154, 14); // Sorfina in pinned 029-2/sorfina.txt; 45 is a portal.
     pos1(npc, 46, 12, 20);
     const inventory = packet(0x01ee, 22);
     inventory.writeUInt16LE(inventory.length, 2);
