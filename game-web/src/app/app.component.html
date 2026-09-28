@@ -101,7 +101,14 @@
         <div class="section-head"><h2>Inventario</h2><button class="close-button" type="button" (click)="showInventory = false" aria-label="Cerrar inventario">×</button></div>
         <p class="muted-message" *ngIf="!inventory.length">Tu mochila está vacía.</p>
         <div class="inventory-grid" *ngIf="inventory.length"><div class="item" *ngFor="let item of inventory" [class.equipped]="item.equipped">
-          <div><span class="item-icon">✦</span><span><strong>Objeto {{ item.id }}</strong><small>ESPACIO {{ item.slot }} · ×{{ item.amount }}</small></span></div>
+          <div>
+            <span class="item-icon" aria-hidden="true">
+              <img *ngIf="item.iconUrl && !failedItemIcons.has(item.iconUrl); else itemPlaceholder"
+                [src]="item.iconUrl" alt="" width="32" height="32" (error)="failedItemIcons.add(item.iconUrl)">
+              <ng-template #itemPlaceholder>✦</ng-template>
+            </span>
+            <span class="item-label"><strong>{{ item.name || ('Objeto ' + item.id) }}</strong><small>ID {{ item.id }} · ESPACIO {{ item.slot }} · ×{{ item.amount }}</small></span>
+          </div>
           <div class="item-actions"><button type="button" (click)="useItem(item)">Usar</button><button type="button" (click)="toggleEquip(item)">{{ item.equipped ? 'Quitar' : 'Equipar' }}</button></div>
         </div></div>
       </section>

@@ -1,5 +1,6 @@
 import net from 'node:net';
 import { PacketDecoder, destination, destinationAt, fixedString, packet, positionAt, textAt, validInt } from './protocol.mjs';
+import { inventoryWithMetadata } from './item-metadata.mjs';
 
 const idPacket = (id, target, size = 6) => {
   const out = packet(id, size);
@@ -29,7 +30,8 @@ const connectionErrors = {
 };
 
 export class GameSession {
-  constructor(ws, lengths, ports = { login: 6901, char: 6122, map: 5122 }, { replyTimeoutMs = 15000 } = {}) {
+  constructor(ws, lengths, ports = { login: 6901, char: 6122, map: 5122 },
+    { replyTimeoutMs = 15000, itemMetadata = new Map() } = {}) {
     this.ws = ws;
     this.lengths = lengths;
     this.ports = ports;
@@ -42,12 +44,14 @@ export class GameSession {
     this.npcMode = null;
     this.walkStepMs = 150; // TMWA DEFAULT_WALK_SPEED: delay per orthogonal tile.
     this.inventory = new Map();
+    this.itemMetadata = itemMetadata;
     this.names = new Set();
     this.replyTimeoutMs = replyTimeoutMs;
     this.replyTimer = null;
   }
 
   emit(data) {
+    if (data.type === 'inventory') data = { ...data, items: inventoryWithMetadata(data.items, this.itemMetadata) };
     if (this.ws.readyState === 1) this.ws.send(JSON.stringify(data));
   }
 

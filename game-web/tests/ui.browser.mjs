@@ -2,9 +2,12 @@ import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { chromium } from 'playwright';
 import { createGameServer } from '../backend/server.mjs';
+import { inventoryWithMetadata, loadItemMetadata } from '../backend/item-metadata.mjs';
+import { fileURLToPath } from 'node:url';
 
 const port = Number(process.env.GAME_WEB_TEST_PORT ?? 31320);
 let browser, server;
+const itemMetadata = loadItemMetadata(fileURLToPath(new URL('../../sources/serverdata/client-data', import.meta.url)));
 
 before(async () => {
   server = createGameServer({ port });
@@ -105,6 +108,86 @@ async function canvasPoint(page, dx = 0, dy = 0) {
       y: rect.top + (canvas.clientHeight / 2 + dy) * rect.height / canvas.clientHeight };
   }, { dx, dy });
 }
+
+async function inventoryPage(t, setup = async () => {}, decorate = items => inventoryWithMetadata(items, itemMetadata)) {
+  const commands = [];
+  const items = [
+    { id: 501, slot: 5, amount: 2, equipped: false },
+    { id: 1203, slot: 6, amount: 1, equipped: false },
+    { id: 65000, slot: 7, amount: 9, equipped: false },
+  ];
+  const page = await loginPage(t, (socket, command) => {
+    commands.push(command);
+    if (command.type === 'login') socket.send(JSON.stringify({ type: 'world', map: 'inventory-test', x: 30, y: 25, id: 42, name: 'Aria' }));
+    if (command.type === 'use') items.find(item => item.slot === command.slot).amount--;
+    if (command.type === 'equip' || command.type === 'unequip')
+      items.find(item => item.slot === command.slot).equipped = command.type === 'equip';
+    if (['loaded', 'use', 'equip', 'unequip'].includes(command.type))
+      socket.send(JSON.stringify({ type: 'inventory', items: decorate(items) }));
+  }, async page => {
+    await page.route('**/assets/maps/inventory-test.tmx', route => route.fulfill({
+      contentType: 'application/xml',
+      body: '<map width="80" height="60" tilewidth="32" tileheight="32"/>',
+    }));
+    await setup(page);
+  });
+  await page.locator('.map-loading').waitFor({ state: 'hidden' });
+  await page.getByRole('button', { name: 'Inventario' }).click();
+  await page.locator('.inventory-grid .item').nth(2).waitFor({ state: 'visible' });
+  return { page, commands };
+}
+
+test('inventory shows original names and icons, preserves IDs and acts on the selected slot after updates', { timeout: 15000 }, async t => {
+  const { page, commands } = await inventoryPage(t);
+  const drink = page.locator('.item').filter({ hasText: 'Cactus Drink' });
+  const hat = page.locator('.item').filter({ hasText: 'Ranger Hat' });
+  const unknown = page.locator('.item').filter({ hasText: 'Objeto 65000' });
+  await page.waitForFunction(() => [...document.querySelectorAll('.item-icon img')].every(img => img.complete && img.naturalWidth > 0));
+  assert.equal(await drink.locator('img').getAttribute('src'), '/assets/graphics/items/use/potions/a.png');
+  assert.equal(await hat.locator('img').getAttribute('src'), '/assets/graphics/items/equipment/head/rangerhat.png');
+  assert.match(await drink.locator('small').innerText(), /ID 501 · ESPACIO 5 · ×2/);
+  assert.equal(await unknown.locator('img').count(), 0);
+  assert.equal((await unknown.locator('.item-icon').innerText()).trim(), '✦');
+  await drink.getByRole('button', { name: 'Usar', exact: true }).click();
+  await drink.locator('small').filter({ hasText: '×1' }).waitFor({ state: 'visible' });
+  await hat.getByRole('button', { name: 'Equipar', exact: true }).click();
+  await hat.getByRole('button', { name: 'Quitar', exact: true }).waitFor({ state: 'visible' });
+  assert.match(await hat.getAttribute('class'), /equipped/);
+  await hat.getByRole('button', { name: 'Quitar', exact: true }).click();
+  await hat.getByRole('button', { name: 'Equipar', exact: true }).waitFor({ state: 'visible' });
+  assert.deepEqual(commands.filter(command => ['use', 'equip', 'unequip'].includes(command.type)), [
+    { type: 'use', slot: 5 }, { type: 'equip', slot: 6 }, { type: 'unequip', slot: 6 },
+  ]);
+});
+
+test('a failed icon uses the placeholder across inventory updates without retry loops', { timeout: 15000 }, async t => {
+  let imageRequests = 0;
+  const { page } = await inventoryPage(t, async page => {
+    await page.route('**/assets/graphics/items/use/potions/a.png', route => {
+      imageRequests++;
+      return route.fulfill({ status: 404, body: '' });
+    });
+  });
+  const drink = page.locator('.item').filter({ hasText: 'Cactus Drink' });
+  await drink.locator('img').waitFor({ state: 'detached' });
+  assert.equal((await drink.locator('.item-icon').innerText()).trim(), '✦');
+  await drink.getByRole('button', { name: 'Usar', exact: true }).click();
+  await drink.locator('small').filter({ hasText: '×1' }).waitFor({ state: 'visible' });
+  assert.equal(await drink.locator('img').count(), 0);
+  assert.equal(imageRequests, 1);
+});
+
+test('missing metadata keeps the inventory usable and names render as text, not HTML', { timeout: 15000 }, async t => {
+  const untrustedName = '<img src=x onerror="window.badItem=true"> & "Hat"';
+  const { page } = await inventoryPage(t, undefined, items => items.map(item =>
+    item.id === 1203 ? { ...item, name: untrustedName } : { ...item }));
+  const drink = page.locator('.item').filter({ hasText: 'Objeto 501' });
+  assert.equal(await page.locator('.item img').count(), 0);
+  assert.equal(await page.locator('.item strong').nth(1).innerText(), untrustedName);
+  assert.equal(await page.evaluate(() => window.badItem), undefined);
+  await drink.getByRole('button', { name: 'Usar', exact: true }).click();
+  await drink.locator('small').filter({ hasText: '×1' }).waitFor({ state: 'visible' });
+});
 
 test('ground beside an NPC moves without opening its dialogue', { timeout: 10000 }, async t => {
   const { page, commands } = await worldPage(t);

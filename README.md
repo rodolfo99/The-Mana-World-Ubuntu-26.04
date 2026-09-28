@@ -19,6 +19,12 @@ acceso y registro, personajes, movimiento, chat, diálogos NPC, combate e
 inventario. Consulta [la guía del cliente web](game-web/README.md) para
 funciones, limitaciones, pruebas y seguridad.
 
+El inventario web carga ahora nombres e iconos desde el `items.xml` original y
+sus inclusiones locales. Conserva el ID visible y usa `Objeto <ID>` o `✦` si
+falta información. Valida las rutas y los archivos antes de usarlos; los
+iconos con tintes muestran por ahora su imagen base. Consulta el
+[alcance y la actualización del inventario](game-web/README.md#nombres-e-iconos-del-inventario).
+
 La versión 0.2.4 corrige el salto al destino al caminar con el ratón: el
 personaje y la cámara recorren las casillas a la velocidad indicada por TMWA.
 Los clics consecutivos conservan el avance del paso actual; las flechas usan

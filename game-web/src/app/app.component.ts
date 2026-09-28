@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { GameEntity, WorldRenderer } from './world-renderer';
 
 interface Character { id: number; name: string; slot: number; level: number; hp: number; maxHp: number; sex: string }
-interface Item { slot: number; id: number; amount: number; equipped?: boolean }
+interface Item { slot: number; id: number; amount: number; equipped?: boolean; name?: string; iconUrl?: string }
 interface Message { from: string; text: string; type: 'system' | 'player' | 'error' }
 interface Dialog { id: number; text: string; choices: string[]; next: boolean; close: boolean; input?: 'number' | 'text' }
 
@@ -36,6 +36,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   characters: Character[] = [];
   selectedCharacter?: Character;
   inventory: Item[] = [];
+  readonly failedItemIcons = new Set<string>();
   messages: Message[] = [];
   chatText = '';
   dialog?: Dialog;

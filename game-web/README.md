@@ -204,15 +204,52 @@ personajes, creación, selección y entrada al mapa tienen un límite de 15 segu
 | Chat | Mensajes del mapa recibidos y enviados al servidor. |
 | NPC | Hablar, continuar, elegir opción y responder texto o número. |
 | Combate | Seleccionar monstruo, atacar y detener ataque; TMWA decide el resultado. |
-| Inventario | Ver objetos por ID y cantidad, usar, equipar y quitar. |
+| Inventario | Ver nombres e iconos originales, ID y cantidad; usar, equipar y quitar. |
 
 Un NPC puede combinar varios sprites con tintes y equipamiento; esta versión
 lo marca en el mapa con un indicador hasta implementar esa composición.
-Los objetos se muestran por ID porque aún no se ha incorporado su nombre e
-icono de `items.xml`. Las imágenes base de jugador y la criatura Maggot se
-cargan desde los datos originales. Algunas opciones avanzadas del cliente
+Las imágenes base de jugador y la criatura Maggot se cargan desde los datos
+originales. Algunas opciones avanzadas del cliente
 nativo, como comercio, almacenamiento, misiones y efectos complejos, siguen
 fuera de esta versión.
+
+## Nombres e iconos del inventario
+
+Al iniciar la pasarela web se lee `sources/serverdata/client-data/items.xml`
+y sus `<include name="…"/>`, con rutas relativas a `client-data`, como en el
+cliente nativo. El catálogo se mantiene en memoria y se une por ID a **cada**
+actualización del inventario. No altera los espacios, cantidades, equipamiento
+ni las órdenes enviadas a TMWA. No requiere descargar ni copiar otros recursos.
+
+- El nombre proviene exclusivamente del atributo `name`; se conserva el idioma
+  original, sin traducciones ni nombres inventados. El ID sigue visible.
+- `image` se resuelve bajo `graphics/items/`. Solo se sirven como iconos PNG
+  existentes dentro de ese directorio, mediante `/assets/graphics/items/…`.
+  El sufijo `|…` de Mana describe tintes: se usa el **archivo base original**;
+  esta mejora todavía no aplica los tintes, por lo que variantes de color pueden
+  compartir apariencia aunque tengan nombres distintos.
+- Sin nombre se muestra `Objeto <ID>`. Sin icono, o si su descarga falla, aparece
+  `✦`. Los fallbacks son independientes y los botones siguen funcionando.
+  Un icono fallido no se vuelve a solicitar en cada actualización; recarga la
+  página después de reparar el recurso.
+- Un catálogo ausente o dañado no impide iniciar la pasarela. Se omiten los
+  archivos inválidos y se conservan las ramas válidas. No se buscan sustitutos
+  en Internet ni se usan nombres de archivo como nombres de objetos.
+
+La lectura utiliza el parser XML estricto `saxes`, rechaza DTD y entidades
+personalizadas, URLs, rutas absolutas, rutas codificadas y recorridos `..`.
+Comprueba las rutas reales para impedir escapes mediante enlaces simbólicos.
+Cada archivo se procesa una vez; los ciclos y repeticiones no se expanden.
+Los límites son 16 niveles de inclusiones, 4,096 referencias XML, 256 KiB por
+archivo, 16 MiB en total y 64 niveles de anidamiento XML. Solo se aceptan IDs
+de inventario entre 1 y 65,535 y nombres de hasta 256 caracteres. Los nombres
+se muestran como texto de Angular, nunca como HTML.
+
+Después de actualizar estos archivos, detén y vuelve a iniciar
+`./scripts/juego-web.sh` y recarga la página. El script instala la dependencia
+añadida y recompila la interfaz cuando detecta cambios. También debes reiniciar
+la pasarela si modificas `items.xml` o sus inclusiones: el catálogo es una
+instantánea por proceso. No requiere recompilar ni reiniciar TMWA.
 
 ## Arquitectura y archivos
 
@@ -227,6 +264,8 @@ fuera de esta versión.
   Mana fijado por el proyecto y arma/desarma los paquetes del protocolo.
 - `backend/session.mjs`: conecta sucesivamente con login, personajes y mapa;
   valida las órdenes enviadas por el navegador.
+- `backend/item-metadata.mjs`: carga el catálogo original de forma acotada,
+  valida sus rutas y añade únicamente nombre e icono a los eventos de inventario.
 - `tests/`: prueba de paquetes fragmentados y flujo completo frente a tres
   servidores TCP simulados, errores de autenticación y tiempos de espera;
   pruebas de la interfaz con Chromium, sin modificar cuentas reales.
@@ -241,6 +280,9 @@ puerto 3020.
 ## Desarrollo y pruebas
 
 ```bash
+# Desde la raíz, para las tablas del protocolo y los recursos de integración
+git submodule update --init sources/mana sources/serverdata
+git -C sources/serverdata submodule update --init client-data
 cd game-web
 npm ci
 npm test
@@ -261,7 +303,20 @@ de acceso y desconexión. Usa respuestas simuladas y carga el mapa original
 El navegador puede indicarse con `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` y el
 puerto de pruebas con `GAME_WEB_TEST_PORT` (31320 por defecto).
 
-Validación de 0.2.4: quince pruebas de protocolo, pasarela y movimiento, doce
+Las pruebas de inventario (`tests/item-metadata.test.mjs`) cubren inclusiones
+recursivas, nombres e imágenes del catálogo original, escapes XML, campos
+ausentes, IDs desconocidos, archivos dañados, ciclos, DTD, rutas maliciosas,
+enlaces simbólicos y límites de lectura. También verifican altas, bajas,
+cantidades, equipamiento y comandos por espacio. Las pruebas de navegador
+comprueban los iconos reales, el fallback de descarga, la presentación segura
+de nombres y la actualización de los botones sin clics adicionales.
+
+Validación del inventario (2026-09-28): `npm test` pasó las 24 pruebas y
+`npm run build` generó la compilación de producción. `npm run test:ui` pasó
+las 15 pruebas, incluidas tres nuevas de inventario. Se ejecutaron en Linux
+con Node.js 24.19.0 y Chromium 153 mediante `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+
+Validación previa de 0.2.4: quince pruebas de protocolo, pasarela y movimiento, doce
 de navegador y cuatro del preparador de español. Se comprueban la velocidad
 por casilla, las diagonales y colisiones, los clics consecutivos y las flechas,
 el traslado entre habitaciones de `029-2` y a `029-1`, el ACK de `close2`, la
