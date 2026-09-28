@@ -1,4 +1,4 @@
-# Cliente jugable Angular para The Mana World (v0.2.4)
+# Cliente jugable Angular para The Mana World (v0.2.5)
 
 Esta aplicación es independiente de `admin-web/`. Conserva el servidor TMWA
 y los datos del mundo de este repositorio; un servicio Node local convierte
@@ -37,6 +37,41 @@ instala dependencias con `npm ci` y compila Angular. El servidor TMWA usa
 con `GAME_WEB_PORT=3021 ./scripts/juego-web.sh` si 3020 está ocupado.
 Node.js compatible: 22.22.3+, 24.15+ o 26+.
 
+## Actualizar a 0.2.5: nombres e iconos del inventario
+
+Esta versión incorpora la [PR #3](https://github.com/rodolfo99/The-Mana-World-Ubuntu-26.04/pull/3),
+fusionada el 28 de septiembre de 2026: carga segura de nombres e iconos
+originales desde `client-data`, con el ID visible y fallbacks independientes
+cuando faltan datos. Conserva las correcciones de movimiento y diálogos de
+las versiones anteriores; consulta [el alcance del inventario](#nombres-e-iconos-del-inventario).
+
+Detén **el cliente web** con `Ctrl+C`. Desde **la carpeta de tu instalación
+actual**, guarda antes cualquier cambio propio en `game-web`, `scripts`,
+`localizacion` y `README.md`: los siguientes comandos sustituyen esas rutas.
+
+```bash
+git fetch --no-recurse-submodules origin main
+git restore --source=origin/main -- game-web scripts localizacion README.md
+./scripts/juego-web.sh
+```
+
+El arranque instala las dependencias del lockfile con `npm ci` y recompila
+Angular al detectar los archivos actualizados, incluida la dependencia XML
+`saxes`. Recarga http://127.0.0.1:3020 con `Ctrl+Shift+R` y comprueba que el pie
+indique `WEB 0.2.5`. El reinicio de la pasarela vuelve a cargar `items.xml` y
+sus inclusiones.
+
+La actualización conserva las cuentas, personajes y configuraciones de
+`sources/serverdata`; no cambia los commits fijados de los submódulos ni
+requiere recompilar o reiniciar TMWA al venir de 0.2.4. Si vienes de una
+versión con NPC todavía en inglés, sigue también [la recuperación del español](#recuperar-el-español-y-corregir-el-ratón-022)
+y reinicia el servidor desde esa misma instalación.
+
+Para generar el ZIP completo, sigue [el empaquetado de v0.2.5](../README.md#empaquetar-v025)
+en un clon separado. El nombre por defecto y la carpeta interna son
+`The-Mana-World-Ubuntu-26.04-angular-v0.2.5`; el archivo termina en `.zip`.
+El ZIP automático de GitHub sigue sin incluir los submódulos.
+
 ## Actualizar a 0.2.4: velocidad del ratón
 
 El cliente colocaba al personaje en el destino al recibir la aceptación de
@@ -51,14 +86,15 @@ Detén **el cliente web** con `Ctrl+C`. Desde la carpeta de tu instalación
 actual, ejecuta:
 
 ```bash
-git fetch origin main
+git fetch --no-recurse-submodules origin main
 git restore --source=origin/main -- game-web scripts localizacion README.md
 ./scripts/juego-web.sh
 ```
 
 Recarga http://127.0.0.1:3020 con `Ctrl+Shift+R` y comprueba que el pie indique
-`WEB 0.2.4`. No requiere recompilar TMWA. Estos comandos conservan las cuentas
-y personajes de `sources/serverdata`; guarda antes tus modificaciones propias
+`WEB 0.2.5` al actualizar desde el `main` actual. No requiere recompilar TMWA.
+Estos comandos conservan las cuentas y personajes de `sources/serverdata`;
+guarda antes tus modificaciones propias
 en las rutas que se actualizan. Si todavía usabas datos NPC en inglés de una
 versión anterior, reinicia también `./scripts/servidor.sh` desde esa misma
 carpeta para que lea los diálogos traducidos.
@@ -76,7 +112,7 @@ Detén el servidor y la web con `Ctrl+C` en sus terminales. Desde **la carpeta
 de tu instalación actual**, ejecuta:
 
 ```bash
-git fetch origin main
+git fetch --no-recurse-submodules origin main
 git restore --source=origin/main -- game-web scripts localizacion README.md
 ./scripts/preparar-traduccion.sh --npc
 ./scripts/servidor.sh
@@ -89,8 +125,9 @@ En otra terminal de **esa misma carpeta**:
 ```
 
 Abre http://127.0.0.1:3020 y recarga con `Ctrl+Shift+R`. El pie muestra
-`WEB 0.2.4` al actualizar desde el `main` actual. El arranque web comprueba también los parches NPC e indica la
-carpeta de datos. Es necesario reiniciar TMWA: los diálogos se cargan en
+`WEB 0.2.5` al actualizar desde el `main` actual. El arranque web comprueba
+también los parches NPC e indica la carpeta de datos. Es necesario reiniciar
+TMWA: los diálogos se cargan en
 memoria al arrancar. Si sigues ejecutando el servidor desde otra copia,
 seguirá utilizando sus propios NPC y cuentas.
 
@@ -132,7 +169,7 @@ Para actualizar la misma instalación, detén el servidor y el cliente web con
 `Ctrl+C` en sus terminales. Desde la raíz del proyecto:
 
 ```bash
-git fetch origin main
+git fetch --no-recurse-submodules origin main
 git restore --source=origin/main -- game-web scripts localizacion README.md
 ./scripts/preparar-traduccion.sh
 ./scripts/servidor.sh
@@ -168,7 +205,7 @@ pueden seguir en inglés.
 Detén el cliente web con `Ctrl+C`. Desde la raíz de la instalación, ejecuta:
 
 ```bash
-git fetch origin main
+git fetch --no-recurse-submodules origin main
 git restore --source=origin/main -- game-web
 ./scripts/juego-web.sh
 ```
@@ -179,7 +216,8 @@ Recarga `http://127.0.0.1:3020` con `Ctrl+Shift+R`. El servidor TMWA puede
 seguir encendido; no hace falta repetir la instalación de sus binarios.
 
 El ZIP completo 0.2.0 incluía metadatos Git, por lo que también admite esos
-comandos. Si obtuviste una copia sin Git, utiliza el ZIP completo 0.2.4.
+comandos. Si obtuviste una copia sin Git, genera el ZIP completo 0.2.5
+siguiendo [las instrucciones de empaquetado](../README.md#empaquetar-v025).
 
 La causa corregida era la actualización de la interfaz: Angular 22 utiliza
 por defecto detección de cambios sin Zone.js y estrategia OnPush. Los eventos
@@ -311,10 +349,15 @@ cantidades, equipamiento y comandos por espacio. Las pruebas de navegador
 comprueban los iconos reales, el fallback de descarga, la presentación segura
 de nombres y la actualización de los botones sin clics adicionales.
 
-Validación del inventario (2026-09-28): `npm test` pasó las 24 pruebas y
+Validación de v0.2.5 (2026-09-28): `npm test` pasó las 24 pruebas y
 `npm run build` generó la compilación de producción. `npm run test:ui` pasó
-las 15 pruebas, incluidas tres nuevas de inventario. Se ejecutaron en Linux
-con Node.js 24.19.0 y Chromium 153 mediante `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+las 15 pruebas, incluidas las tres de inventario añadidas en la PR #3.
+Se ejecutaron en Ubuntu 24.04 con Node.js 24.19.0 y Chromium 153 mediante
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Las cuatro pruebas del preparador de
+español también pasaron. Se verificó el empaquetador con datos temporales:
+nombre y carpeta v0.2.5, exclusiones de datos locales y rechazo de una salida
+dentro del repositorio. Esta comprobación no genera el paquete completo de
+distribución ni modifica los submódulos de la instalación.
 
 Validación previa de 0.2.4: quince pruebas de protocolo, pasarela y movimiento, doce
 de navegador y cuatro del preparador de español. Se comprueban la velocidad
@@ -330,9 +373,9 @@ metadatos Git de submódulos y conservación de cuentas y cambios personales:
 python3 -m unittest discover -s scripts/tests -v
 ```
 
-Estas comprobaciones no sustituyen una partida real con los tres procesos
-TMWA en Ubuntu 26.04. Se compiló TMWA para contrastar el protocolo, pero no
-se pudo ejecutar aquí: el entorno solo ofrece `root` y TMWA exige un usuario
+**Aún no se ha validado una partida real completa con los tres procesos
+TMWA en Ubuntu 26.04.** Se compiló TMWA previamente para contrastar el
+protocolo, pero no se pudo ejecutar aquí: el entorno solo ofrece `root` y TMWA exige un usuario
 normal. Las pruebas TCP utilizan servidores simulados, y las de navegador
 utilizan los recursos originales con respuestas WebSocket simuladas.
 

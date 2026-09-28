@@ -5,12 +5,12 @@ Ubuntu 26.04 x86_64. El cliente se conecta a `127.0.0.1` y la administración
 se limita a esa dirección con una clave generada durante la instalación.
 Incluye una primera traducción automática al español de los diálogos de NPC.
 
-> **Estado de v0.2.4:** TMWA se compiló para contrastar el protocolo. El cliente
+> **Estado de v0.2.5:** TMWA se compiló para contrastar el protocolo. El cliente
 > web cuenta con pruebas automatizadas con servidores TCP simulados y respuestas
 > WebSocket simuladas. **Aún no se ha validado una partida real completa en
 > Ubuntu 26.04.** La traducción de NPC necesita revisión de estilo y contexto.
 
-## Cliente web jugable (v0.2.4)
+## Cliente web jugable (v0.2.5)
 
 `game-web/` incorpora un cliente Angular 22 separado del panel administrativo
 `admin-web/`. Se conecta al mismo servidor TMWA por una pasarela local y
@@ -19,18 +19,22 @@ acceso y registro, personajes, movimiento, chat, diálogos NPC, combate e
 inventario. Consulta [la guía del cliente web](game-web/README.md) para
 funciones, limitaciones, pruebas y seguridad.
 
-El inventario web carga ahora nombres e iconos desde el `items.xml` original y
-sus inclusiones locales. Conserva el ID visible y usa `Objeto <ID>` o `✦` si
+La versión 0.2.5 incorpora los nombres e iconos del inventario de la
+[PR #3](https://github.com/rodolfo99/The-Mana-World-Ubuntu-26.04/pull/3),
+fusionada el 28 de septiembre de 2026. Los carga desde el `items.xml` original
+y sus inclusiones locales. Conserva el ID visible y usa `Objeto <ID>` o `✦` si
 falta información. Valida las rutas y los archivos antes de usarlos; los
 iconos con tintes muestran por ahora su imagen base. Consulta el
 [alcance y la actualización del inventario](game-web/README.md#nombres-e-iconos-del-inventario).
+Para una instalación existente, sigue [la actualización a 0.2.5](game-web/README.md#actualizar-a-025-nombres-e-iconos-del-inventario)
+desde la carpeta donde ya tienes tus cuentas; no cambia los commits fijados
+de los submódulos.
 
 La versión 0.2.4 corrige el salto al destino al caminar con el ratón: el
 personaje y la cámara recorren las casillas a la velocidad indicada por TMWA.
 Los clics consecutivos conservan el avance del paso actual; las flechas usan
 la misma animación. Un cambio de mapa, también entre habitaciones del mismo
-mapa, cancela el recorrido anterior. Sigue [la actualización a 0.2.4](game-web/README.md#actualizar-a-024-velocidad-del-ratón)
-desde la carpeta donde ya tienes tus cuentas.
+mapa, cancela el recorrido anterior. Estas correcciones se conservan en 0.2.5.
 
 La versión 0.2.3 corrige el cierre y la cancelación de diálogos que podían
 dejar al servidor esperando una respuesta, conserva todas las líneas de cada
@@ -59,16 +63,27 @@ Con el servidor instalado y encendido en otra terminal:
 ./scripts/juego-web.sh
 ```
 
-Abre `http://127.0.0.1:3020` en esta computadora. Para generar un ZIP con los
-fuentes, mapas, gráficos, música y metadatos mínimos necesarios para compilar:
+Abre `http://127.0.0.1:3020` en esta computadora.
+
+### Empaquetar v0.2.5
+
+Para generar un ZIP con los fuentes, mapas, gráficos, música y metadatos
+mínimos necesarios para compilar, usa un clon separado de tu instalación de
+juego. Desde la raíz de ese clon actualizado a v0.2.5:
 
 ```bash
 git submodule update --init --recursive
 python3 scripts/empaquetar-completo.py
 ```
 
-El ZIP se crea junto a la carpeta del repositorio y excluye cuentas,
-personajes guardados, claves locales y carpetas de compilación. Extrae el ZIP
+La inicialización usa los commits fijados en el repositorio, sin `--remote`;
+no actualiza los submódulos a sus últimas versiones. El empaquetador comprueba
+los recursos y aplica los parches de español existentes antes de crear el ZIP.
+La salida es `../The-Mana-World-Ubuntu-26.04-angular-v0.2.5.zip`, con una carpeta
+interna `The-Mana-World-Ubuntu-26.04-angular-v0.2.5/`. Puedes pasar una ruta de
+salida como primer argumento del script; debe quedar fuera del repositorio.
+El ZIP excluye cuentas, personajes guardados, claves locales y carpetas de
+compilación. Extrae el ZIP
 y ejecuta `./scripts/preparar-fuentes.sh`, `./scripts/instalar.sh` y los dos
 comandos de inicio anteriores. Las dependencias de Ubuntu y npm se instalan
 en el equipo donde ejecutes el juego.
@@ -279,17 +294,20 @@ Ubuntu 24.04 e incluyeron la generación de mapas y configuraciones, la sintaxis
 de los scripts, la reconstrucción de los parches y un clon público del
 repositorio.
 
-La validación documentada de **v0.2.4** en
+La validación automatizada de **v0.2.5** (2026-09-28), documentada en
 [la guía del cliente web](game-web/README.md#desarrollo-y-pruebas) incluye:
 
 | Pruebas | Cantidad | Alcance |
 | --- | --- | --- |
-| Protocolo, pasarela y movimiento | 15 | Paquetes, flujo de sesión frente a servidores TCP simulados y lógica de movimiento. |
-| Interfaz en Chromium | 12 | Respuestas WebSocket simuladas, incluidos escenarios con los mapas y recursos originales. |
+| Protocolo, pasarela, movimiento e inventario | 24 | Paquetes, sesión TCP simulada, movimiento y carga segura del catálogo original. |
+| Interfaz en Chromium | 15 | Respuestas WebSocket simuladas, mapas originales, nombres, iconos y fallbacks del inventario. |
 | Preparador de español | 4 | Repetición, metadatos Git de submódulos y conservación de cuentas y cambios personales en datos de prueba. |
 
-En esa validación se compiló TMWA para contrastar el protocolo, pero no se
-pudo ejecutar en el entorno de pruebas: solo ofrecía `root` y TMWA exige un
+También se verificó la compilación de producción del cliente web. Los
+commits fijados de los submódulos se mantienen respecto de la PR #3.
+
+En una validación anterior se compiló TMWA para contrastar el protocolo, pero
+no se pudo ejecutar en el entorno de pruebas: solo ofrecía `root` y TMWA exige un
 usuario normal. Las pruebas TCP usan servidores simulados y las de Chromium
 respuestas WebSocket simuladas; no constituyen una sesión contra TMWA real.
 
