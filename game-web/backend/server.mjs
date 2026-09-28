@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { loadPacketLengths } from './protocol.mjs';
 import { GameSession } from './session.mjs';
+import { loadItemMetadata } from './item-metadata.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(here, '../..');
@@ -25,6 +26,7 @@ export function createGameServer({ root = projectRoot, port = 3020,
   ports = { login: 6901, char: 6122, map: 5122 } } = {}) {
   const lengths = loadPacketLengths(root);
   const assetRoot = join(root, 'sources/serverdata/client-data');
+  const itemMetadata = loadItemMetadata(assetRoot);
   const webRoot = join(root, 'game-web/dist/game-web/browser');
   const wss = new WebSocketServer({ noServer: true, maxPayload: 2048, perMessageDeflate: false });
   const server = http.createServer((req, res) => {
@@ -62,7 +64,7 @@ export function createGameServer({ root = projectRoot, port = 3020,
     wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws));
   });
   wss.on('connection', ws => {
-    const session = new GameSession(ws, lengths, ports);
+    const session = new GameSession(ws, lengths, ports, { itemMetadata });
     ws.on('message', (data, binary) => {
       try {
         if (binary) throw new Error('Se espera un mensaje JSON');
