@@ -56,19 +56,21 @@
       <div class="map-loading" *ngIf="loadingMap"><div class="loader-symbol">✧</div>Cargando el mapa y sus recursos…</div>
 
       <ng-container *ngIf="phase === 'game'">
+        <div class="world-heading">
         <div class="map-card overlay-panel"><span class="eyebrow">REGIÓN ACTUAL</span><strong>{{ mapName || 'Cargando…' }}</strong><span>COORDENADAS&nbsp; {{ coords.x }}, {{ coords.y }}</span></div>
-        <div class="quick-help overlay-panel">WASD / FLECHAS · CAMINAR <span>·</span> CLIC · INTERACTUAR</div>
         <div class="target-card overlay-panel" *ngIf="target as enemy">
           <div><span class="eyebrow">OBJETIVO</span><strong>{{ enemy.name || (enemy.kind === 'monster' ? 'Criatura' : 'Personaje') }}</strong></div>
           <div class="target-actions"><button *ngIf="enemy.kind === 'monster'" type="button" (click)="attack(enemy.id)">⚔ Atacar</button><button *ngIf="enemy.kind === 'npc'" type="button" (click)="talk(enemy.id)">Hablar</button><button *ngIf="enemy.kind === 'monster'" type="button" (click)="stopAttack()">Detener</button></div>
         </div>
+        </div>
+        <div class="quick-help overlay-panel">WASD / FLECHAS · CAMINAR <span>·</span> CLIC · INTERACTUAR</div>
         <div class="dialog-backdrop" *ngIf="dialog as npcDialog">
-          <div class="dialog-card"><div class="eyebrow">CONVERSACIÓN</div><p class="dialog-text">{{ npcDialog.text }}</p>
+          <div class="dialog-card"><div class="eyebrow">CONVERSACIÓN</div><p class="dialog-text"><ng-container *ngTemplateOutlet="formattedText; context: { $implicit: npcDialog.text }"></ng-container></p>
             <form *ngIf="npcDialog.input" class="dialog-input" (ngSubmit)="submitDialogInput()">
               <input name="npcAnswer" [(ngModel)]="dialogInput" [type]="npcDialog.input === 'number' ? 'number' : 'text'" [placeholder]="npcDialog.input === 'number' ? 'Escribe una cantidad…' : 'Escribe tu respuesta…'" required>
               <button type="submit" [disabled]="!dialogInput.trim()">Responder →</button>
             </form>
-            <div class="dialog-actions"><ng-container *ngFor="let choice of npcDialog.choices; let index = index"><button type="button" *ngIf="choice.trim()" (click)="chooseDialog(index)">{{ choice }}</button></ng-container>
+            <div class="dialog-actions"><ng-container *ngFor="let choice of npcDialog.choices; let index = index"><button type="button" *ngIf="choice.trim()" (click)="chooseDialog(index)"><ng-container *ngTemplateOutlet="formattedText; context: { $implicit: choice, links: false }"></ng-container></button></ng-container>
               <button type="button" *ngIf="npcDialog.next && !npcDialog.choices.length && !npcDialog.input" (click)="nextDialog()">Continuar →</button>
               <button type="button" class="subtle" *ngIf="npcDialog.close || npcDialog.choices.length" (click)="closeDialog()">{{ npcDialog.close ? 'Cerrar' : 'Cancelar conversación' }}</button></div></div>
         </div>
@@ -86,7 +88,7 @@
       <section class="sidebar-section journal-panel">
         <div class="section-head"><div><div class="eyebrow">COMUNICACIÓN</div><h2>Diario &amp; chat</h2></div><span class="journal-icon">✉</span></div>
         <div class="message-list" role="log" aria-live="polite">
-          <p *ngFor="let message of messages" [class.system-message]="message.type === 'system'" [class.error-message]="message.type === 'error'"><strong>{{ message.from }}</strong> {{ message.text }}</p>
+          <p *ngFor="let message of messages" [class.system-message]="message.type === 'system'" [class.error-message]="message.type === 'error'"><strong>{{ message.from }}</strong>{{ ' ' }}<ng-container *ngTemplateOutlet="formattedText; context: { $implicit: message.text }"></ng-container></p>
           <p *ngIf="!messages.length" class="muted-message">Las voces del mundo aparecerán aquí.</p>
         </div>
         <form class="chat-form" (ngSubmit)="sendChat()"><input #chatInput name="chat" [(ngModel)]="chatText" maxlength="250" placeholder="Enviar mensaje…" aria-label="Mensaje para el chat"><button type="submit" aria-label="Enviar mensaje">↗</button></form>
@@ -118,3 +120,5 @@
   </main>
   <footer class="footer-status"><span class="footer-diamond">◆</span><span>{{ status }}</span><span class="footer-credit">THE MANA WORLD · WEB 0.2.6</span></footer>
 </div>
+
+<ng-template #formattedText let-text let-links="links"><ng-container *ngFor="let part of formatText(text)"><a *ngIf="part.href && links !== false; else textPart" class="tmw-link" [href]="part.href" target="_blank" rel="noopener noreferrer" [style.font-weight]="part.bold ? '700' : null" [style.color]="part.color">{{ part.text }}</a><ng-template #textPart><span [class.tmw-item]="part.itemId !== undefined" [attr.title]="part.itemId !== undefined ? 'Objeto ' + part.itemId : null" [style.font-weight]="part.bold ? '700' : null" [style.color]="part.color">{{ part.text }}</span></ng-template></ng-container></ng-template>

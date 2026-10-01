@@ -6,6 +6,12 @@ paquetes del protocolo TMWA a eventos WebSocket para Angular. El navegador
 renderiza los mapas TMX, tilesets TSX y sprites del submódulo `client-data`.
 No usa la contraseña administrativa ni el proceso `tmwa-admin`.
 
+Las [correcciones prioritarias de traducción y presentación](TRADUCCION-WEB.md)
+restauran referencias de hechizos, adaptan las instrucciones del tutorial a
+los controles web y muestran el marcado admitido de Mana sin exponer sus
+códigos como texto. Incluyen los pasos para actualizar una instalación ya
+traducida y los límites de esta revisión.
+
 ## Inicio rápido en Ubuntu 26.04
 
 Desde un clon con submódulos:
@@ -381,6 +387,13 @@ cuatro pruebas del preparador de español también pasaron. Se verificó con
 datos temporales el nombre y la carpeta de empaquetado v0.2.6, las exclusiones
 y el rechazo de salidas dentro del repositorio. No se generó un ZIP completo
 en esta validación. Los submódulos mantienen sus commits fijados.
+
+Validación posterior de las correcciones de traducción (2026-10-01):
+46 pruebas de lógica/protocolo, 27 de navegador con build de producción y
+15 de traducción satisfactorias. Consulta el
+[alcance y entorno de esta validación](TRADUCCION-WEB.md#validación-automatizada-del-1-de-octubre-de-2026).
+No sustituye los resultados históricos anteriores ni acredita una nueva
+partida completa de todas las misiones corregidas.
 
 Validación previa de v0.2.5 (2026-09-28): `npm test` pasó las 24 pruebas y
 `npm run build` generó la compilación de producción. `npm run test:ui` pasó

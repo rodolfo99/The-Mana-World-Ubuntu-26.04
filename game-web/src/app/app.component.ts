@@ -2,6 +2,8 @@ import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GameEntity, WorldRenderer } from './world-renderer';
+import { parseTmwText, TextPart } from './text-format';
+import { adaptNpcText } from './tutorial-web';
 
 interface Character { id: number; name: string; slot: number; level: number; hp: number; maxHp: number; sex: string }
 interface Item { slot: number; id: number; amount: number; equipped?: boolean; name?: string; iconUrl?: string }
@@ -23,6 +25,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   private socket?: WebSocket;
   private worldRequest = 0;
   private keyDelay = 0;
+  private readonly formattedTextCache = new Map<string, TextPart[]>();
 
   phase: 'login' | 'characters' | 'game' = 'login';
   authMode: 'login' | 'register' = 'login';
@@ -178,9 +181,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
           this.send({ type: 'closeNpc', id });
         } else {
           const previous = this.dialog?.id === id ? this.dialog.text : '';
-          const line = typeof event['text'] === 'string' ? event['text'] : undefined;
+          const line = typeof event['text'] === 'string' ? adaptNpcText(event['text']) : undefined;
           this.dialog = { id, text: line === undefined ? previous : previous ? `${previous}\n${line}` : line,
-            choices: Array.isArray(event['choices']) ? event['choices'].map(String) : [],
+            choices: Array.isArray(event['choices']) ? event['choices'].map(choice => adaptNpcText(String(choice))) : [],
             next: Boolean(event['next']),
             close: Boolean(event['close']),
             input: event['input'] === 'number' || event['input'] === 'text' ? event['input'] : undefined };
@@ -190,6 +193,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       }
       case 'inventory':
         this.inventory = Array.isArray(event['items']) ? event['items'] as Item[] : [];
+        this.formattedTextCache.clear();
         break;
       case 'hit':
         if (Number(event['source']) === this.renderer?.target?.id || Number(event['source']) === this.selectedCharacter?.id) {
@@ -358,6 +362,17 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   private log(from: string, text: string, type: Message['type']): void {
     this.messages.push({ from, text, type });
     if (this.messages.length > 100) this.messages.shift();
+  }
+
+  formatText(text: string): TextPart[] {
+    let parts = this.formattedTextCache.get(text);
+    if (!parts) {
+      parts = parseTmwText(text, id => this.inventory.find(item => item.id === id)?.name);
+      // Keep stable segment identities during movement-driven change detection.
+      if (this.formattedTextCache.size >= 160) this.formattedTextCache.delete(this.formattedTextCache.keys().next().value!);
+      this.formattedTextCache.set(text, parts);
+    }
+    return parts;
   }
 
   private errorText(error: unknown): string { return error instanceof Error ? error.message : String(error); }

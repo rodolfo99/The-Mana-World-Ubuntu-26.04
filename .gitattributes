@@ -1,0 +1,2 @@
+# Unified patches retain context prefixes and whitespace from upstream files.
+localizacion/*.patch whitespace=-blank-at-eol

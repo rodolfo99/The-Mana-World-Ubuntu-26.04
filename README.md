@@ -5,6 +5,10 @@ Ubuntu 26.04 x86_64. El cliente se conecta a `127.0.0.1` y la administración
 se limita a esa dirección con una clave generada durante la instalación.
 Incluye una primera traducción automática al español de los diálogos de NPC.
 
+Consulta las [correcciones prioritarias de traducción y presentación](game-web/TRADUCCION-WEB.md)
+para reparar referencias de hechizos y actualizar las instrucciones y el
+formato del tutorial del cliente web.
+
 > **Estado de v0.2.6:** TMWA se compiló para contrastar el protocolo. El cliente
 > web cuenta con pruebas automatizadas con servidores TCP simulados y respuestas
 > WebSocket simuladas. Por separado, **el usuario confirmó el 29 de septiembre
