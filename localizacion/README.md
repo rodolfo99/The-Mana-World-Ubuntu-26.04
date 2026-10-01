@@ -6,6 +6,13 @@ Se modificaron 424 archivos y 11 976 apariciones de texto. Requiere revisión
 humana de estilo, pistas y contexto de las misiones antes de considerarse
 definitiva.
 
+La [revisión prioritaria del 1 de octubre de 2026](../game-web/TRADUCCION-WEB.md)
+añade `npc-correcciones-es.patch`: restaura 51 referencias de invocación que
+había alterado la traducción, conserva los literales técnicos `lurk` y `help`,
+y corrige fragmentos de Auldsbel y Ched en un total de 19 archivos. Restaurar las referencias originales no
+certifica todas las misiones ni corrige referencias que ya faltaban en las
+fuentes originales.
+
 ## Preparar la traducción
 
 Después de clonar este repositorio o descargar su ZIP desde GitHub, ejecuta
@@ -50,6 +57,9 @@ si detecta alguno, se detiene e indica la ruta para que revises tus cambios.
 `aplicar-parche-es.sh` utiliza este mismo procedimiento.
 
 El catálogo JSON asigna a cada texto original en inglés la traducción usada.
+`npc_es_correcciones.json` añade fragmentos revisados sin reemplazar el
+catálogo base reconstruido y verificado. El extractor lo carga automáticamente
+si está junto a `npc_es.json`; también acepta `--overrides RUTA`.
 `scripts/npc_es.py` permite comprobar coincidencias con una copia original y
 aplicar el catálogo:
 
@@ -67,6 +77,10 @@ mediante llamadas directas a `mes`, `menu` y funciones equivalentes. Los
 textos de reglas del juego se dejaron sin modificar. La interfaz del cliente
 utiliza un catálogo independiente en `sources/mana/po/es.po`.
 
+El cliente web adapta por separado las instrucciones conocidas del tutorial
+y presenta el marcado admitido de Mana. Estas adaptaciones no cambian los
+controles del cliente nativo ni traducen todos los nombres de mapas y objetos.
+
 Para corregir un diálogo, edita el archivo NPC correspondiente y reinicia el
 proceso del mapa. Si quieres conservar el cambio como parte del catálogo,
 actualiza también `localizacion/npc_es.json`. Los archivos dentro de
@@ -75,12 +89,13 @@ mostrará ese submódulo como modificado después de aplicar la traducción.
 
 ## Verificación realizada
 
-La comparación de los 424 scripts modificados confirmó que las órdenes,
-etiquetas y flujo del programa conservaron su estructura; solo cambiaron
-textos visibles y algunos espacios finales. `git diff --check` no detectó
-errores de formato. También se comprobó que los parches reconstruidos
-coinciden byte por byte con los originales preparados. Aún falta revisar las
-misiones dentro del juego en Ubuntu 26.04.
+La verificación inicial de los 424 scripts no detectó cambios en órdenes,
+etiquetas ni estructura de flujo. `git diff --check` no detectó errores de
+formato, y los parches reconstruidos coincidían con los originales preparados.
+Esa revisión no protegía suficientemente los argumentos de `get(...)` ni los
+espacios de las concatenaciones: la revisión del 1 de octubre añade controles
+específicos y el parche correctivo descrito arriba. La progresión de todas las
+misiones corregidas sigue pendiente de revisión en una partida real.
 
 Las fuentes y sus licencias originales se conservan. Esta traducción no es
 una publicación oficial de The Mana World.

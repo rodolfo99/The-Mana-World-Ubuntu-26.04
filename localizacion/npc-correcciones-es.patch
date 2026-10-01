@@ -1,0 +1,495 @@
+diff --git a/world/map/npc/001-1/ched.txt b/world/map/npc/001-1/ched.txt
+--- a/world/map/npc/001-1/ched.txt
++++ b/world/map/npc/001-1/ched.txt
+@@ -3,9 +3,9 @@
+ 001-1,43,48,0|script|Ched|113
+ {
+     mes "[Ched]";
+-    mes "\"Estoy tratando de conseguir trabajo en mi tarea de Alchemy, pero estoy teniendo problemas.\"";
+-    mes "\"Se supone que debo combinar dos pociones para crear una " + getitemlink("ConcentrationPotion") + "Pero no puedo imaginar qué dos combinar...\"";
++    mes "\"Estoy intentando avanzar con mi tarea de alquimia, pero estoy teniendo dificultades.\"";
++    mes "\"Se supone que debo combinar dos pociones para crear una " + getitemlink("ConcentrationPotion") + ", pero no consigo averiguar cuáles debo combinar...\"";
+     next;
+-    mes "\"Tal vez debería volver a practicar" + get(.invocation$, "detect-magic") + "' until I can make potions properly.\" %%6";
++    mes "\"Tal vez debería volver a practicar '" + get(.invocation$, "detect-magic") + "' hasta que aprenda a preparar pociones correctamente.\" %%6";
+     close;
+ }
+diff --git a/world/map/npc/001-1/children.txt b/world/map/npc/001-1/children.txt
+--- a/world/map/npc/001-1/children.txt
++++ b/world/map/npc/001-1/children.txt
+@@ -78,7 +78,7 @@
+ L_giveword:
+     mes "[Aisha]";
+     mes "Aisha mira alrededor mientras se apoya y te abraza para silenciar. Después de unos segundos, ella te susurra:";
+-    mes "\"Me gustas, así que te diré la mala palabra. ¡Pero no puedes contarle a nadie más! La mala palabra es '" + get(.invocation$, "hechizo-aggravate") + ".'\"";
++    mes "\"Me gustas, así que te diré la mala palabra. ¡Pero no puedes contarle a nadie más! La mala palabra es '" + get(.invocation$, "spell-aggravate") + ".'\"";
+     next;
+ 
+     mes "[Aisha]";
+diff --git a/world/map/npc/001-1/guards.txt b/world/map/npc/001-1/guards.txt
+--- a/world/map/npc/001-1/guards.txt
++++ b/world/map/npc/001-1/guards.txt
+@@ -91,6 +91,6 @@
+     mes "[Ryan the Town Guard]";
+     mes "\"Cuidado con los Escorpiones Negros. ¡Son extremadamente peligrosos!\"";
+     next;
+-    mes "\"Cuando uno se acerca a la puerta de la ciudad, Ekinu me tiene corriendo gritando" + get(.invocation$, "hechizo-aggravate") + "'. De alguna manera, esto lo distrae para que Ekinu pueda matarlo.\"";
++    mes "\"Cuando uno se acerca a la puerta de la ciudad, Ekinu me tiene corriendo gritando" + get(.invocation$, "spell-aggravate") + "'. De alguna manera, esto lo distrae para que Ekinu pueda matarlo.\"";
+     close;
+ }
+diff --git a/world/map/npc/001-2/pauline.txt b/world/map/npc/001-2/pauline.txt
+--- a/world/map/npc/001-2/pauline.txt
++++ b/world/map/npc/001-2/pauline.txt
+@@ -92,7 +92,7 @@
+ L_Next1:
+     mes "[Pauline]";
+     mes "\"Bueno, sólo podía leer las invocaciones. Así que no sé exactamente qué tipo de ingredientes vas a necesitar.\"";
+-    mes "\"El primero para el mouboo fue " + get(.invocation$, "smmouboo") + " y el de la Pinkie era " + get(.invocation$, "Smpinkie") +".\"";
++    mes "\"El primero para el mouboo fue " + get(.invocation$, "smmouboo") + " y el de la Pinkie era " + get(.invocation$, "smpinkie") +".\"";
+     next;
+     mes "\"Para el hechizo de Pinkie mi sugerencia es probar ingredientes similares a los otros hechizos Astral. Pruebe una raíz y un artículo típico para los rosados.\"";
+     mes "\"El hechizo mouboo podría ser más complicado. De lo que podría traducir, uno de los componentes del hechizo está elaborado por la magia.\"";
+@@ -159,7 +159,7 @@
+     goto L_DidNotWorkMouboo;
+ 
+ L_DidNotWorkMouboo:
+-    mes "La Bruja toma " + @pauline_ingredient1$ + " y " + @pauline_ingredient2$ + " y los pone juntos llamando " + get(.invocation$, "citación-mouboo") + ".";
++    mes "La Bruja toma " + @pauline_ingredient1$ + " y " + @pauline_ingredient2$ + " y los pone juntos llamando " + get(.invocation$, "summon-mouboo") + ".";
+     mes "No pasa nada.";
+     mes "[Pauline]";
+     mes "\"Parece que no me dijiste los ingredientes correctos. Vuelve cuando encuentres los correctos.\"";
+@@ -176,7 +176,7 @@
+     goto L_DidNotWorkMouboo;
+ 
+ L_TrySpellMouboo:
+-    mes "La Bruja toma " + @pauline_ingredient1$ + " y " + @pauline_ingredient2$ + " y los pone juntos llamando " + get(.invocation$, "citación-mouboo") + ".";
++    mes "La Bruja toma " + @pauline_ingredient1$ + " y " + @pauline_ingredient2$ + " y los pone juntos llamando " + get(.invocation$, "summon-mouboo") + ".";
+     monster "001-1", 55,68, "", 1028, 1;
+     mes "[Pauline]";
+     mes "\"¡Funcionó!\"";
+@@ -222,7 +222,7 @@
+     goto L_DidNotWorkPinkie;
+ 
+ L_DidNotWorkPinkie:
+-    mes "La Bruja toma " + @pauline_ingredient1$ + " y " + @pauline_ingredient2$ + " y los pone juntos llamando " + get(.invocation$, "citación-pinkie") + ".";
++    mes "La Bruja toma " + @pauline_ingredient1$ + " y " + @pauline_ingredient2$ + " y los pone juntos llamando " + get(.invocation$, "summon-pinkie") + ".";
+     mes "No pasa nada.";
+     mes "[Pauline]";
+     mes "\"Parece que no me dijiste los ingredientes correctos. Vuelve cuando encuentres los correctos.\"";
+@@ -239,7 +239,7 @@
+     goto L_DidNotWorkPinkie;
+ 
+ L_TrySpellPinkie:
+-    mes "La Bruja toma " + @pauline_ingredient1$ + " y " + @pauline_ingredient2$ + " y los pone juntos llamando " + get(.invocation$, "citación-pinkie") + ".";
++    mes "La Bruja toma " + @pauline_ingredient1$ + " y " + @pauline_ingredient2$ + " y los pone juntos llamando " + get(.invocation$, "summon-pinkie") + ".";
+     monster "001-1", 54,68, "", 1018, 1;
+     mes "[Pauline]";
+     mes "\"¡Funcionó!\"";
+diff --git a/world/map/npc/001-2/tondar.txt b/world/map/npc/001-2/tondar.txt
+--- a/world/map/npc/001-2/tondar.txt
++++ b/world/map/npc/001-2/tondar.txt
+@@ -43,7 +43,7 @@
+ 
+ L_spell:
+     mes "[Tondar]";
+-    mes "\"Bueno, está bien, éste no puede hacer mucho daño. Presiona tus manos juntas y di:" + get(.invocation$, "experiencia de hechizos") + "'.\"";
++    mes "\"Bueno, está bien, éste no puede hacer mucho daño. Presiona tus manos juntas y di:" + get(.invocation$, "spell-experience") + "'.\"";
+     mes "\"Esto liberará un flujo constante de magia dentro de ti. Concéntrate y trata de controlarlo; es una buena práctica meditativa.\"";
+     close;
+ 
+diff --git a/world/map/npc/002-1/elanore.txt b/world/map/npc/002-1/elanore.txt
+--- a/world/map/npc/002-1/elanore.txt
++++ b/world/map/npc/002-1/elanore.txt
+@@ -231,7 +231,7 @@
+     goto L_MakeSelf_yes;
+ 
+ L_MakeSelf_yes:
+-    mes "\"¡Oh, pero por supuesto! Eres lo suficientemente poderoso para hacer tus propias piedras de vida, usando el encantamiento '" + get(.invocation$, "piedra preciosa") + "'. Esto consumirá una pierna de insectos o un slime de insectos o una de cada una de las cuatro hierbas curativas, sin embargo.\"";
++    mes "\"¡Oh, pero por supuesto! Eres lo suficientemente poderoso para hacer tus propias piedras de vida, usando el encantamiento '" + get(.invocation$, "enchant-lifestone") + "'. Esto consumirá una pierna de insectos o un slime de insectos o una de cada una de las cuatro hierbas curativas, sin embargo.\"";
+     goto L_Close;
+ 
+ L_MakeSelf_no:
+@@ -263,15 +263,15 @@
+     next;
+     mes "[Elanore the Healer]";
+     mes "\"Para curar a alguien, primero localice la lesión. Como principiante, tienes que tocar la herida; con la práctica, será suficiente pensar en ello. Sostenga la piedra de vida en una mano, tocando la herida con la otra.\"";
+-    mes "\"Entonces di:" + get(.invocation$, "menos-heal") + "', seguido por el nombre del que desea sanar.\"";
++    mes "\"Entonces di:" + get(.invocation$, "lesser-heal") + "', seguido por el nombre del que desea sanar.\"";
+     next;
+     mes "[Elanore the Healer]";
+     mes "\"Quizá quieras escribir eso, en realidad. De hecho, usted podría querer asegurarse de mantener notas de todos los hechizos que escucha, porque nunca se sabe si usted los escuchará de nuevo!\"";
+-    mes "\"La invocación fue '" + get(.invocation$, "menos-heal") + "'.\"";
++    mes "\"La invocación fue '" + get(.invocation$, "lesser-heal") + "'.\"";
+     next;
+     mes "[Elanore the Healer]";
+     mes "\"Esto sólo curará los cortes y los moretones, sin embargo, y tomará algún tiempo para tomar efecto. ¡No será inútil reparar huesos rotos o lesiones más severas!\"";
+-    mes "\"Para curarse, es suficiente decir '" + get(.invocation$, "menos-heal") + "'por sí mismo.\"";
++    mes "\"Para curarse, es suficiente decir '" + get(.invocation$, "lesser-heal") + "'por sí mismo.\"";
+     next;
+     mes "[Elanore the Healer]";
+     mes "\"Déjame darte una piedra de vida para empezar.\"";
+@@ -342,7 +342,7 @@
+     mes "\"Ahora te enseñaré a curarte acostándote en tus manos. La técnica es similar al hechizo que te enseñé al principio, pero esta vez transfieres tu propia salud en lugar de sacar la salud de una piedra vital.\"";
+     next;
+     mes "[Elanore the Healer]";
+-    mes "\"Primero, pon tu mano sobre la persona que deseas curar. No necesitas tocar la lesión en sí, aunque tienes que tocar la piel hasta que tengas un poco más de experiencia. Entonces, mide la palabra '" + get(.invocation$, "lay-on-hand") + "'\"";
++    mes "\"Primero, pon tu mano sobre la persona que deseas curar. No necesitas tocar la lesión en sí, aunque tienes que tocar la piel hasta que tengas un poco más de experiencia. Entonces, mide la palabra '" + get(.invocation$, "lay-on-hands") + "'\"";
+     next;
+     mes "[Elanore the Healer]";
+     mes "\"Esto permitirá que su propia fuerza de vida fluya en la persona que usted está sanando. Si usted está gravemente herido, usted no será capaz de hacer esto.\"";
+@@ -498,11 +498,11 @@
+     next;
+     mes "[Elanore the Healer]";
+     mes "\"Si quieres curar a alguien que está envenenado, frota primero una hoja de azar entre tus manos. Sus manos deben estar cubiertas en líquido de Gamboge para que esto funcione.\"";
+-    mes "\"Habla la invocación," + get(.invocation$, "cura-veneno") + "'.\"";
++    mes "\"Habla la invocación," + get(.invocation$, "cure-poison") + "'.\"";
+     mes "\"Luego, o tocar a la persona envenenada con las manos, o hablar su nombre. Tienes que estar cerca para que esto funcione.\"";
+     next;
+     mes "[Elanore the Healer]";
+-    mes "\"Una vez más, la invocación es:" + get(.invocation$, "cura-veneno") + "'.\"";
++    mes "\"Una vez más, la invocación es:" + get(.invocation$, "cure-poison") + "'.\"";
+     mes "\"Vuelve pronto; hay otro hechizo que me gustaría enseñarte.\"";
+     next;
+     set @Q_status, @STATUS_LEARNED_CURE_POISON;
+diff --git a/world/map/npc/006-1/spirit.txt b/world/map/npc/006-1/spirit.txt
+--- a/world/map/npc/006-1/spirit.txt
++++ b/world/map/npc/006-1/spirit.txt
+@@ -178,7 +178,7 @@
+     mes "\"Kekeke... ¡Excelente! Sí, aquí va tu primer hechizo, la mochila voladora! Si está sobrecargado, se quitará la carga de los hombros.\"";
+     next;
+     mes "[Earth Spirit]";
+-    mes "\"Toma un capullo, vivo o muerto, y sufúralo en magia. Whisper '" + get(.invocation$, "fly-backpack") + "', y sentir que flota!\"";
++    mes "\"Toma un capullo, vivo o muerto, y sufúralo en magia. Whisper '" + get(.invocation$, "flying-backpack") + "', y sentir que flota!\"";
+     goto L_Q_magic_finish;
+ 
+ L_Q_magic_3:
+@@ -196,7 +196,7 @@
+     mes "\"¡Sí, bien! Este es un hechizo de protección, haciendo tu piel más difícil. Necesitas un punto duro para ello, sin embargo. Mantén ese pico en tus manos, y concéntrate en ello.\"";
+     next;
+     mes "[Earth Spirit]";
+-    mes "\"Siguiente, diga '" + get(.invocation$, "proteger") + "', y sentir tu piel crecer rígida! Muy útil contra picaduras y apuñalas, pokes y pícaros y ese tipo de cosas.\"";
++    mes "\"Siguiente, diga '" + get(.invocation$, "protect") + "', y sentir tu piel crecer rígida! Muy útil contra picaduras y apuñalas, pokes y pícaros y ese tipo de cosas.\"";
+     goto L_Q_magic_finish;
+ 
+ L_Q_magic_4:
+diff --git a/world/map/npc/008-1/hinnak.txt b/world/map/npc/008-1/hinnak.txt
+--- a/world/map/npc/008-1/hinnak.txt
++++ b/world/map/npc/008-1/hinnak.txt
+@@ -214,7 +214,7 @@
+ 
+ L_Sagatha_word:
+     mes "[Farmer Hinnak]";
+-    mes "\"No puedo estar seguro... pero algo así como..." + get(.invocation$, "Convocatoria-magos") + "Creo.\"";
++    mes "\"No puedo estar seguro... pero algo así como..." + get(.invocation$, "summon-maggots") + "Creo.\"";
+     goto L_Close;
+ 
+ L_NoBeer:
+diff --git a/world/map/npc/009-2/misc.txt b/world/map/npc/009-2/misc.txt
+--- a/world/map/npc/009-2/misc.txt
++++ b/world/map/npc/009-2/misc.txt
+@@ -39,7 +39,7 @@
+     mes "La página después de eso está escrita de nuevo con rapidez, con muchas palabras y secciones cruzadas y comentarios laterales como \"casi funcionó\" o \"trabajó bien ayer\".";
+     next;
+     mes "[Bookshelf]";
+-    mes "La última palabra en esa página es '" + get(.invocation$, "hacer-hierro-polvo") + "\"y está subrayado dos veces con un comentario al lado de él diciendo 'finalmente lo hizo bien.'";
++    mes "La última palabra en esa página es '" + get(.invocation$, "make-iron-powder") + "\"y está subrayado dos veces con un comentario al lado de él diciendo 'finalmente lo hizo bien.'";
+     next;
+     mes "[Bookshelf]";
+     mes "Desafortunadamente, no puedes distinguir para qué es la transmutación o incluso si requiere algún material...";
+diff --git a/world/map/npc/009-2/wyara.txt b/world/map/npc/009-2/wyara.txt
+--- a/world/map/npc/009-2/wyara.txt
++++ b/world/map/npc/009-2/wyara.txt
+@@ -242,7 +242,7 @@
+ 
+ L_M_spell3:
+     mes "[Wyara the Witch]";
+-    mes "\"Ahora que conoces los fundamentos de la magia de la naturaleza, aquí está uno de mis favoritos: '" + get(.invocation$, "lluvia") + "Llamará la lluvia, donde estés de pie. Consumirá una botella de agua, sin embargo.\"";
++    mes "\"Ahora que conoces los fundamentos de la magia de la naturaleza, aquí está uno de mis favoritos: '" + get(.invocation$, "rain") + "Llamará la lluvia, donde estés de pie. Consumirá una botella de agua, sin embargo.\"";
+     if (getskilllv(SKILL_MAGIC) < 2)
+         mes "\"No eres lo suficientemente poderoso para usarlo todavía, sin embargo; primero tendrás que absorber más magia de la semilla maná.\"";
+     next;
+@@ -257,7 +257,7 @@
+     if (!(getpartnerid2()))
+         goto L_M_main;
+     mes "[Wyara the Witch]";
+-    mes "\"Los socios casados pueden encontrarse aún más fácilmente. Usar el '" + get(.invocation$, "- ¿Qué?") + "\"deletrear en su lugar.\"";
++    mes "\"Los socios casados pueden encontrarse aún más fácilmente. Usar el '" + get(.invocation$, "sense-spouse") + "\"deletrear en su lugar.\"";
+     next;
+     goto L_M_main;
+ 
+diff --git a/world/map/npc/009-3/sword.txt b/world/map/npc/009-3/sword.txt
+--- a/world/map/npc/009-3/sword.txt
++++ b/world/map/npc/009-3/sword.txt
+@@ -103,7 +103,7 @@
+     mes "\"Así que estás atado al camino de la guerra, como yo, como mi hermana...\"";
+     next;
+     mes "[Magic Sword]";
+-    mes "\"Así que sea, compañero guerrero. Oír el encantamiento para el hechizo de la hoja: '" + get(.invocation$, "magia negra") + "'\"";
++    mes "\"Así que sea, compañero guerrero. Oír el encantamiento para el hechizo de la hoja: '" + get(.invocation$, "magic-blade") + "'\"";
+     mes "\"Sostén un cuchillo, afilado o regular, cuando lo hables.\"";
+     set @Q_status, @STATUS_LEARNED_MAGICBLADE;
+     callsub S_update_var;
+@@ -152,7 +152,7 @@
+     mes "\"El hechizo que te enseñaré es el granizo de las flechas hechizo. Hará que las flechas caigan de los cielos a tus enemigos.\"";
+     next;
+     mes "[Magic Sword]";
+-    mes "\"Toma veinte flechas, rociar polvo de azufre sobre ellos, y luego hablar '" + get(.invocation$, "flecha-hail") + "'. Lánzalos arriba en el aire, y mira el granizo desplegable delante de tus pies.\"";
++    mes "\"Toma veinte flechas, rociar polvo de azufre sobre ellos, y luego hablar '" + get(.invocation$, "arrow-hail") + "'. Lánzalos arriba en el aire, y mira el granizo desplegable delante de tus pies.\"";
+     close;
+ 
+ L_L2_almost_done:
+diff --git a/world/map/npc/011-1/auldsbel.txt b/world/map/npc/011-1/auldsbel.txt
+--- a/world/map/npc/011-1/auldsbel.txt
++++ b/world/map/npc/011-1/auldsbel.txt
+@@ -984,10 +984,10 @@
+     mes "\"Este hechizo es una simple invocación de transmutación. Todo lo que se necesita es un tronco de madera limpio. Sostenlo en tu mano, centra tus poderes y di la invocación mágica.\"";
+     next;
+     mes "[Auldsbel the Wizard]";
+-    mes "\"Puedes convertir el registro en una figura de madera imaginando a la criatura cuya forma quieres en tu cabeza y diciendo:" + get(.invocation$, "hechizo-transmute-wood") + "\",' seguido por la última sílaba del nombre de la criatura en la que quieres moldearlo.\"";
+-    next;
+-    mes "[Auldsbel the Wizard]";
+-    mes "\"Así que..." + get(.invocation$, "hechizo-transmute-wood") +  " por ejemplo, para una figura Skytlurk. Si sabes lo que es un Skytlurk, quiero decir, de lo contrario tendrás un tiempo difícil imaginándolo. Puede que quieras probar a otros en su lugar.\"";
++    mes "\"Puedes convertir el tronco en una figura de madera imaginando la criatura que quieres representar y diciendo '" + get(.invocation$, "spell-transmute-wood") + "', seguido de la última sílaba del nombre de la criatura que quieres representar.\"";
++    next;
++    mes "[Auldsbel the Wizard]";
++    mes "\"Por ejemplo, '" + get(.invocation$, "spell-transmute-wood") +  " lurk' para una figura de Skytlurk. Si sabes qué es un Skytlurk, claro; de lo contrario, te costará imaginarlo. Aunque quizá prefieras probar con otras criaturas.\"";
+     next;
+     mes "[Auldsbel the Wizard]";
+     mes "\"Y tiene que ser el viejo nombre de Tritan. La mayoría de las criaturas tienen nombres muy diferentes, pero algunos viejos nombres de Tritan han sobrevivido. Prueba un poco, hasta que encuentres uno que se adapte.\"";
+@@ -1001,7 +1001,7 @@
+ 
+ L_repeat_spell:
+     mes "[Auldsbel the Wizard]";
+-    mes "\"La invocación es:" + get(.invocation$, "hechizo-transmute-wood") + ",' seguido por la última sílaba del nombre de la criatura que desea formar el registro en. Así que..." + get(.invocation$, "hechizo-transmute-wood") + " Se esconden para una figura Skytlurk.\"";
++    mes "\"La invocación es '" + get(.invocation$, "spell-transmute-wood") + "', seguido de la última sílaba del nombre de la criatura que quieres representar con el tronco. Por ejemplo, '" + get(.invocation$, "spell-transmute-wood") + " lurk' para una figura de Skytlurk.\"";
+     next;
+     mes "[Auldsbel the Wizard]";
+     mes "\"Pero ten en cuenta dos cosas: Primero, debes saber cómo es la criatura – así que un Skytlurk probablemente no funcionará – y segundo, debes usar el antiguo nombre Tritan de ella. `Fluffy' y `Scorpion' son nombres modernos, por lo que los que no funcionan, deberías probar otros.\"";
+@@ -1161,7 +1161,7 @@
+     mes "[1000 experience points]";
+     next;
+     mes "[Auldsbel the Wizard]";
+-    mes "\"Para hacer una camisa, utilice la invocación '" + get(.invocation$, "camiseta de maquillaje") + "'. Esto requerirá cinco pedazos de tela.\"";
++    mes "\"Para hacer una camisa, utilice la invocación '" + get(.invocation$, "make-shirt") + "'. Esto requerirá cinco pedazos de tela.\"";
+     next;
+     goto L_main_menu;
+ 
+@@ -1191,7 +1191,7 @@
+     mes "[1000 experience points]";
+     next;
+     mes "[Auldsbel the Wizard]";
+-    mes "\"Este hechizo hace flechas de un solo tronco de madera. Su invocación es '" + get(.invocation$, "gorriones") + "'.\"";
++    mes "\"Este hechizo hace flechas de un solo tronco de madera. Su invocación es '" + get(.invocation$, "make-arrows") + "'.\"";
+     next;
+     goto L_main_menu;
+ 
+@@ -1205,7 +1205,7 @@
+ 
+ L_stu_3_repeat:
+     mes "[Auldsbel the Wizard]";
+-    mes "\"Este tiene la invocación" + get(.invocation$, "tono-concentración-poción") + "'. Ponga dos hojas de cobalto y dos pétalos de flores rosados en una botella de agua, sostenla y hable esa frase.\"";
++    mes "\"Este tiene la invocación" + get(.invocation$, "make-concentration-potion") + "'. Ponga dos hojas de cobalto y dos pétalos de flores rosados en una botella de agua, sostenla y hable esa frase.\"";
+     next;
+     mes "[Auldsbel the Wizard]";
+     mes "\"Es un hechizo complicado, pero si funciona, transformarás la botella en una poción de concentración.\"";
+@@ -1269,7 +1269,7 @@
+     mes "\"Hmm. Vuelve otra vez, por favor; todavía no he descubierto qué enseñarte.\"";
+     next;
+     mes "[Auldsbel the Wizard]";
+-    mes "\"Bueno, hay '" + get(.invocation$, "pulverizadores") + "Para hacer flechas óseas de un solo hueso pero en mi libro, esto no cuenta.\"";
++    mes "\"Bueno, hay '" + get(.invocation$, "make-bones") + "Para hacer flechas óseas de un solo hueso pero en mi libro, esto no cuenta.\"";
+     close;
+ 
+ L_mag_skill_ins:
+diff --git a/world/map/npc/013-1/sagatha.txt b/world/map/npc/013-1/sagatha.txt
+--- a/world/map/npc/013-1/sagatha.txt
++++ b/world/map/npc/013-1/sagatha.txt
+@@ -267,7 +267,7 @@
+     mes "\"Algunas criaturas forestales a veces se sobrevolan o se esconden. Eso los hace incómodos.\"";
+     next;
+     mes "[Sagatha the Witch]";
+-    mes "\"Puedes ayudarlos con la magia de esquilar. Presiona tus manos juntas y di:" + get(.invocation$, "Shear") + "'. Luego póngalos con las manos, y cepilla cualquier exceso.\"";
++    mes "\"Puedes ayudarlos con la magia de esquilar. Presiona tus manos juntas y di:" + get(.invocation$, "shear") + "'. Luego póngalos con las manos, y cepilla cualquier exceso.\"";
+     next;
+     mes "[Sagatha the Witch]";
+     mes "\"El hechizo es fuerte, así que solo necesitas hacer esto una vez. Ten cuidado de no cortarlos. Algunas cosas que derraman son útiles. A menudo te los dejarán como agradecimiento.\"";
+@@ -280,7 +280,7 @@
+     mes "\"Luego, un hechizo de naturaleza. Toma un cáscara de cacao. Sosténgalo en la mano. Siente su ligereza.\"";
+     next;
+     mes "[Sagatha the Witch]";
+-    mes "\"Ahora susurra." + get(.invocation$, "fly-backpack") + "Y si tu mochila te presionaba, ya no deberías sentirlo ahora.\"";
++    mes "\"Ahora susurra." + get(.invocation$, "flying-backpack") + "Y si tu mochila te presionaba, ya no deberías sentirlo ahora.\"";
+     goto L_practice;
+ 
+ L_teach_A10:
+@@ -290,14 +290,14 @@
+     mes "\"Para protegerse contra la magia de los demás, tome un pequeño hongo de un lugar sombrío. Los setas sacan cosas de la tierra. Arranca tu hongo en pedazos entre tus manos.\"";
+     next;
+     mes "[Sagatha the Witch]";
+-    mes "\"Entonces di:" + get(.invocation$, "barrera mágica") + "Y dejar que el poder del hongo se haga cargo.\"";
++    mes "\"Entonces di:" + get(.invocation$, "magic barrier") + "Y dejar que el poder del hongo se haga cargo.\"";
+     goto L_practice;
+ 
+ L_teach_A11:
+     if (@mexp < 200)
+         goto L_teach_noexp;
+     mes "[Sagatha the Witch]";
+-    mes "\"Si tienes que luchar, llama a los aliados. Puedes llamar a los hongos picantes fuera del suelo con un pico de hongos y una raíz. Mantengan el pico y llámenles:" + get(.invocation$, "Smsmushrooms") + "'. Luego presione la raíz al suelo.\"";
++    mes "\"Si tienes que luchar, llama a los aliados. Puedes llamar a los hongos picantes fuera del suelo con un pico de hongos y una raíz. Mantengan el pico y llámenles:" + get(.invocation$, "smsmushrooms") + "'. Luego presione la raíz al suelo.\"";
+     next;
+     mes "[Sagatha the Witch]";
+     mes "\"Las setas picantes a menudo crecen demasiados picos, así que puedes quitar los picos de algunos.\"";
+@@ -315,13 +315,13 @@
+     if (@mexp < 250)
+         goto L_teach_noexp;
+     mes "[Sagatha the Witch]";
+-    mes "\"Puedes endurecer tu piel con un pico duro. Sosténgalo en sus manos y hable '" + get(.invocation$, "proteger") + "', entonces dibuja su dureza en su piel.\"";
+-    next;
+-    mes "[Sagatha the Witch]";
+-    mes "\"O llámalo en la piel de alguien más, diciendo que el nombre de alguien justo después de la '" + get(.invocation$, "proteger") + "'.\"";
+-    next;
+-    mes "[Sagatha the Witch]";
+-    mes "\"También puede quitar este hechizo de usted mismo si usted dice '" + get(.invocation$, "antiprotección") + "'.\"";
++    mes "\"Puedes endurecer tu piel con un pico duro. Sosténgalo en sus manos y hable '" + get(.invocation$, "protect") + "', entonces dibuja su dureza en su piel.\"";
++    next;
++    mes "[Sagatha the Witch]";
++    mes "\"O llámalo en la piel de alguien más, diciendo que el nombre de alguien justo después de la '" + get(.invocation$, "protect") + "'.\"";
++    next;
++    mes "[Sagatha the Witch]";
++    mes "\"También puede quitar este hechizo de usted mismo si usted dice '" + get(.invocation$, "antiprotect") + "'.\"";
+     goto L_practice;
+ 
+ L_teach_noexp:
+diff --git a/world/map/npc/013-2/wizard.txt b/world/map/npc/013-2/wizard.txt
+--- a/world/map/npc/013-2/wizard.txt
++++ b/world/map/npc/013-2/wizard.txt
+@@ -89,7 +89,7 @@
+     mes "\"Este no puede parecer demasiado poderoso, pero puede ser muy útil; es el hechizo 'hide'. Te protegerá de algunas formas de magia de detección.\"";
+     next;
+     mes "[Old Wizard]";
+-    mes "\"Pon un pedazo de tela de algodón en la cabeza, y habla fuera '" + get(.invocation$, "hechizo-hide") + "\", fuerte y claramente. La protección dura bastante tiempo, pero es posible que tengas que renovarla en ocasiones.\"";
++    mes "\"Pon un pedazo de tela de algodón en la cabeza, y habla fuera '" + get(.invocation$, "spell-hide") + "\", fuerte y claramente. La protección dura bastante tiempo, pero es posible que tengas que renovarla en ocasiones.\"";
+     next;
+     mes "[Old Wizard]";
+     mes "\"También puedes echarlo a otros, por supuesto. Sólo habla su nombre después de pronunciar la invocación.\"";
+diff --git a/world/map/npc/015-1/sword.txt b/world/map/npc/015-1/sword.txt
+--- a/world/map/npc/015-1/sword.txt
++++ b/world/map/npc/015-1/sword.txt
+@@ -257,7 +257,7 @@
+     callsub S_update_var;
+     next;
+     mes "[Mystic Sword]";
+-    mes "\"Habla." + get(.invocation$, "magia-ruidos") + "' y tomar un vaso de cerveza y beberlo, sin quitarte los labios. Esto endurecerá y encantará tus puños, convirtiéndolos en armas poderosas.\"";
++    mes "\"Habla." + get(.invocation$, "magic-knuckles") + "' y tomar un vaso de cerveza y beberlo, sin quitarte los labios. Esto endurecerá y encantará tus puños, convirtiéndolos en armas poderosas.\"";
+     close;
+ 
+ L_L2_almost_done:
+@@ -297,7 +297,7 @@
+     callsub S_update_var;
+     next;
+     mes "[Mystic Sword]";
+-    mes "\"Este polvo que usted ha hecho falta para lanzar el hechizo de relámpago. Tíralo al aire y grita." + get(.invocation$, "rayo-strike") +  "', y golpee a tus enemigos con relámpago.\"";
++    mes "\"Este polvo que usted ha hecho falta para lanzar el hechizo de relámpago. Tíralo al aire y grita." + get(.invocation$, "lightning-strike") +  "', y golpee a tus enemigos con relámpago.\"";
+     next;
+     goto L_Farewell;
+ 
+diff --git a/world/map/npc/017-4/waric.txt b/world/map/npc/017-4/waric.txt
+--- a/world/map/npc/017-4/waric.txt
++++ b/world/map/npc/017-4/waric.txt
+@@ -234,7 +234,7 @@
+     mes "\"Ahora que eres un estudiante mío, te enseñaré algunos hechizos.\"";
+     next;
+     mes "\"Comenzaremos con una fácil. Te enseñaré a convocar un hongo malvado.\"";
+-    mes "\"El hechizo consume un pequeño hongo y un Cristal Oscuro. Disparar el Cristal Oscuro en el Pequeño Seno y gritar " + get(.invocation$, "Smwmushroom") +".\"";
++    mes "\"El hechizo consume un pequeño hongo y un Cristal Oscuro. Disparar el Cristal Oscuro en el Pequeño Seno y gritar " + get(.invocation$, "smwmushroom") +".\"";
+     next;
+     mes "\"Un hongo malvado aparecerá para luchar por ti.\"";
+     set OrumQuest, 37;
+@@ -314,7 +314,7 @@
+ 
+ L_Next7:
+     mes "[Waric]";
+-    mes "\"Dije que " + get(.invocation$, "- ¡Asuntos de llamada!") + ".\"";
++    mes "\"Dije que " + get(.invocation$, "summon-snakes") + ".\"";
+     mes "\"Diviértete con esos hechizos y utilízalos para causar odio, ira y muerte.\"";
+     set OrumQuest, 41;
+     goto L_Close;
+@@ -343,9 +343,9 @@
+ L_Next8:
+     mes "[Waric]";
+     mes "\"Sí, por supuesto.\"";
+-    mes "\"Para convocar a las serpientes uso " + get(.invocation$, "- ¡Asuntos de llamada!") + ". Asegúrate de tener un huevo de serpiente y un cristal oscuro contigo.\"";
++    mes "\"Para convocar a las serpientes uso " + get(.invocation$, "summon-snakes") + ". Asegúrate de tener un huevo de serpiente y un cristal oscuro contigo.\"";
+     mes "\"Say " + get(.invocation$, "toxic-dart") + " para hacer sus dos raíces en dardos tóxicos.\"";
+-    mes "\"Y el primer hechizo, para convocar setas malvadas, es " + get(.invocation$, "Smwmushroom") + ". Recuerde, necesitará un pequeño hongo y cristal oscuro.\"";
++    mes "\"Y el primer hechizo, para convocar setas malvadas, es " + get(.invocation$, "smwmushroom") + ". Recuerde, necesitará un pequeño hongo y cristal oscuro.\"";
+     next;
+     mes "\"Ahora vete. ¡Esparen el caos con los hechizos que les he enseñado!\"";
+     goto L_Close;
+diff --git a/world/map/npc/029-2/morgan.txt b/world/map/npc/029-2/morgan.txt
+--- a/world/map/npc/029-2/morgan.txt
++++ b/world/map/npc/029-2/morgan.txt
+@@ -100,7 +100,7 @@
+     mes "\"Se encuentran varias varitas y personal en toda la tierra con muchas fortalezas y debilidades diferentes.\"";
+     mes "\"Para usar la varita necesitas tenerla equipada y hablar el encantamiento para dejarla tocar en tu mana.\"";
+     mes "\"A medida que el poder de tu magia crece así también los hechizos que puedes lanzar.\"";
+-    mes "\"Empecemos con un ataque básico de varitas. " + get(.invocation$, "hechizo-quierd") + "\"";
++    mes "\"Empecemos con un ataque básico de varitas. " + get(.invocation$, "spell-wand") + "\"";
+     mes "\"Equipa la varita y vamos a probar ese hechizo.\"";
+     mes "\"Para lanzar un hechizo abrir la ventana de chat, escriba la invocación y pulse enter.\"";
+     mes "\"Háblame otra vez una vez que hayas lanzado el hechizo.\"";
+@@ -108,7 +108,7 @@
+ 
+ L_Started:
+     mes "[Morgan]";
+-    mes "\"Empecemos con un ataque básico de varitas. " + get(.invocation$, "hechizo-quierd") + "\"";
++    mes "\"Empecemos con un ataque básico de varitas. " + get(.invocation$, "spell-wand") + "\"";
+     mes "\"Equipa la varita y vamos a probar ese hechizo.\"";
+     mes "\"Para lanzar un hechizo abrir la ventana de chat, escriba la invocación y pulse enter.\"";
+     mes "\"Háblame otra vez una vez que hayas lanzado el hechizo.\"";
+@@ -117,7 +117,7 @@
+ L_CastOnce:
+     mes "[Morgan]";
+     mes "\"¡Bien, buen trabajo! Parece que tienes buen flujo de maná.\"";
+-    mes "\"En la siguiente lección. Ahora que tienes " + get(.invocation$, "hechizo-quierd") + " casta,\"";
++    mes "\"En la siguiente lección. Ahora que tienes " + get(.invocation$, "spell-wand") + " casta,\"";
+     mes "\"Cada vez que atacas la varita convertirás un poco de tu mana en un perno mágico.\"";
+     mes "\"Después de tantos ataques, necesitarás retransmitir la invocación para permanecer afinada a la varita.\"";
+     mes "\"(Logging out también cancelará cualquier efecto de hechizo que actualmente esté activo en el juego.)\"";
+@@ -128,10 +128,10 @@
+ 
+ L_LearningDone:
+     mes "[Morgan]";
+-    mes "\"" + get(.invocation$, "hechizo-quierd") + " es un ataque básico de varita.\"";
++    mes "\"" + get(.invocation$, "spell-wand") + " es un ataque básico de varita.\"";
+     mes "\"Un Wand debe estar equipado para usar el hechizo.\"";
+     mes "\"Para lanzar un hechizo abrir la ventana de chat, escriba la invocación y pulse enter.\"";
+-    mes "\"También puede descargar cualquier hechizo activo diciendo " + get(.invocation$, "Descarto de descarga") + ".\"";
++    mes "\"También puede descargar cualquier hechizo activo diciendo " + get(.invocation$, "discharge spell") + ".\"";
+     mes "\"Te he enseñado todo lo que puedo por ahora. Deberías visitar la Semilla Mana al noroeste de Hurnscald.\"";
+     goto L_Close;
+ 
+diff --git a/world/map/npc/099-7/boss.txt b/world/map/npc/099-7/boss.txt
+--- a/world/map/npc/099-7/boss.txt
++++ b/world/map/npc/099-7/boss.txt
+@@ -561,7 +561,7 @@
+     if (!#CRYPT_PASSWORD) end;
+     mes "Hay una inscripción sangrienta en la puerta.";
+     next;
+-    mes "\"##B"+get(.invocation$, "reapertura")+"##b\"";
++    mes "\"##B"+get(.invocation$, "reapercry")+"##b\"";
+     next;
+     mes "##9You hear the sounds of battle. Candle light shines in the distance.";
+     next;
+diff --git a/world/map/npc/functions/teleport_manager.txt b/world/map/npc/functions/teleport_manager.txt
+--- a/world/map/npc/functions/teleport_manager.txt
++++ b/world/map/npc/functions/teleport_manager.txt
+@@ -79,7 +79,7 @@
+     end;
+ 
+ L_AddArgsFail:
+-    if (@DSTMAP$ != "ayuda") message strcharinfo(0), "[TeleportManager] : try @teleportadd help or @teleporthelp";
++    if (@DSTMAP$ != "help") message strcharinfo(0), "[TeleportManager] : try @teleportadd help or @teleporthelp";
+     end; 
+ 
+ L_AddPuppetFail:
