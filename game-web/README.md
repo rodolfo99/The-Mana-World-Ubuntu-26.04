@@ -406,10 +406,13 @@ metadatos Git de submódulos y conservación de cuentas y cambios personales:
 python3 -m unittest discover -s scripts/tests -v
 ```
 
-**Aún no se ha validado una partida real completa con los tres procesos
-TMWA en Ubuntu 26.04.** Se compiló TMWA previamente para contrastar el
-protocolo, pero no se pudo ejecutar aquí: el entorno solo ofrece `root` y TMWA exige un usuario
-normal. Las pruebas TCP utilizan servidores simulados, y las de navegador
+**Partida real:** el usuario confirmó el 29 de septiembre de 2026 una partida
+real completa en Ubuntu 26.04. Esta confirmación es independiente de las
+suites automatizadas documentadas arriba.
+
+Se compiló TMWA previamente para contrastar el protocolo, pero no se pudo
+ejecutar en aquel entorno de pruebas: solo ofrecía `root` y TMWA exige un
+usuario normal. Las pruebas TCP utilizan servidores simulados, y las de navegador
 utilizan los recursos originales con respuestas WebSocket simuladas.
 
 El backend requiere que estén inicializados los submódulos `sources/mana` y

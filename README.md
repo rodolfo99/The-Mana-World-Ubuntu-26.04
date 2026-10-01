@@ -7,8 +7,9 @@ Incluye una primera traducción automática al español de los diálogos de NPC.
 
 > **Estado de v0.2.6:** TMWA se compiló para contrastar el protocolo. El cliente
 > web cuenta con pruebas automatizadas con servidores TCP simulados y respuestas
-> WebSocket simuladas. **Aún no se ha validado una partida real completa en
-> Ubuntu 26.04.** La traducción de NPC necesita revisión de estilo y contexto.
+> WebSocket simuladas. Por separado, **el usuario confirmó el 29 de septiembre
+> de 2026 una partida real completa en Ubuntu 26.04.** La traducción de NPC
+> necesita revisión de estilo y contexto.
 
 ## Cliente web jugable (v0.2.6)
 
@@ -323,9 +324,10 @@ no se pudo ejecutar en el entorno de pruebas: solo ofrecía `root` y TMWA exige 
 usuario normal. Las pruebas TCP usan servidores simulados y las de Chromium
 respuestas WebSocket simuladas; no constituyen una sesión contra TMWA real.
 
-**Aún no se ha validado una partida real completa con los tres procesos de
-TMWA (login, personajes y mapa) en Ubuntu 26.04.** El cliente gráfico nativo
-y Docker también siguen pendientes de verificación en ese sistema.
+**Partida real:** el usuario confirmó el 29 de septiembre de 2026 una partida
+real completa en Ubuntu 26.04. Esta confirmación es independiente de las
+suites automatizadas anteriores y no especifica el cliente utilizado ni si
+se usó Docker.
 
 ## Procedencia y licencias
 
