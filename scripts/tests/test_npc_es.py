@@ -66,6 +66,25 @@ class NpcExtraction(unittest.TestCase):
             self.assertEqual(script.read_text(),
                              'if (@DSTMAP$ != "help") mes "¿Necesitas ayuda?";\n')
 
+    def test_adjacent_commands_only_translate_their_display_statements(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            script = root / 'npc.txt'
+            script.write_text('set @DSTMAP$, "help"; mes "Need help?"; '
+                              'set @DSTMAP$, "help"; mes "Cast now.";\n'
+                              'menu "Need help?", L_Help,\n'
+                              '    "Cast now.", L_Cast; set @DSTMAP$, "help";\n'
+                              'mes "Need help?; Try again."; // mes "Cast now.";\n')
+            npc_es.apply_catalog(root, {'help': 'ayuda', 'Need help?': '¿Necesitas ayuda?',
+                                       'Cast now.': 'Lanza ahora.',
+                                       'Need help?; Try again.': '¿Necesitas ayuda?; Intenta de nuevo.'})
+            self.assertEqual(script.read_text(),
+                             'set @DSTMAP$, "help"; mes "¿Necesitas ayuda?"; '
+                             'set @DSTMAP$, "help"; mes "Lanza ahora.";\n'
+                             'menu "¿Necesitas ayuda?", L_Help,\n'
+                             '    "Lanza ahora.", L_Cast; set @DSTMAP$, "help";\n'
+                             'mes "¿Necesitas ayuda?; Intenta de nuevo."; // mes "Cast now.";\n')
+
 
 class ShippedPatchSafety(unittest.TestCase):
     def test_combined_patches_restore_all_original_invocation_targets(self):

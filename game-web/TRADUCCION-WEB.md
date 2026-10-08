@@ -93,3 +93,35 @@ usan servidores TCP simulados; las del navegador usan respuestas WebSocket
 simuladas y recursos originales. Estas comprobaciones son independientes
 de la partida completa en Ubuntu 26.04 confirmada por el usuario el
 29 de septiembre. No se generó un nuevo ZIP ni se cambió la versión.
+
+## Revisión de integración del 8 de octubre de 2026
+
+Se corrigió una regresión adicional del extractor: un literal técnico de una
+orden posterior a `mes` o a un menú podía traducirse si ambas órdenes
+compartían línea. El extractor delimita ahora cada orden por sus puntos y
+comas reales, sin confundir los que aparecen dentro de textos o comentarios.
+La nueva prueba conserva `help` en órdenes `set`, traduce los mensajes
+adyacentes y comprueba el cierre de menús de varias líneas.
+
+Comprobaciones locales en Ubuntu 24.04.3, Node.js 24.19.0 y Chromium
+153.0.8010.0, independientes de las validaciones históricas anteriores:
+
+| Comprobación | Resultado |
+| --- | --- |
+| `npm test` en `game-web` | 46 pruebas satisfactorias |
+| `npm run test:ui` en `game-web` | Compilación de producción y 27 pruebas satisfactorias |
+| `python3 -m unittest discover -s scripts/tests -v` | 16 pruebas satisfactorias |
+| Preparador completo sobre copias de las fuentes originales y ya traducidas | Aplicación y repetición satisfactorias; ambas llegan al mismo estado de fuentes byte por byte y conservan cuentas y archivos personales de prueba |
+| Auditoría de las fuentes preparadas frente al commit original fijado | Las 63 referencias de invocación coinciden, en el mismo orden por archivo |
+
+Se inspeccionó también el tutorial de Sorfina en ventanas de 1024 × 600 y
+390 × 844, con sus mensajes originales y respuestas WebSocket simuladas.
+
+Para las pruebas de navegador se usó el binario Chromium de
+`@sparticuz/chromium` 153.0.0 mediante
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`, con `FONTCONFIG_PATH=/etc/fonts`.
+No se modificaron las dependencias ni las pruebas de interfaz para adaptarlas
+a ese binario. Las pruebas siguen usando TCP/WebSocket simulados; esta
+revisión local no representa un resultado de CI ni una nueva partida real.
+Los resultados históricos de v0.2.6, la versión y los commits fijados se
+conservan, y no se genera una traducción completa ni un nuevo ZIP.

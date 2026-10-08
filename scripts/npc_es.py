@@ -118,18 +118,23 @@ def occurrences(npc_dir: Path):
         for number, line in enumerate(file.read_text(encoding="utf-8").splitlines(keepends=True), 1):
             masked, in_block = mask_comments(line, in_block)
             code_only = LITERAL.sub(lambda match: " " * len(match.group(0)), masked)
-            display = DISPLAY.search(code_only)
-            if display and display.group(1) == "menu":
-                in_menu = True
-            if display or in_menu:
-                for match in LITERAL.finditer(masked):
-                    if display and match.start() < display.end():
-                        continue  # Conditions before mes/menu are program data.
-                    key = eligible(match.group(1), masked[:match.start()], names)
-                    if key:
-                        yield file, number, match.span(1), match.group(1), key
-            if in_menu and ";" in code_only:
-                in_menu = False
+            # A line may contain several commands. End the display scope at
+            # each real semicolon; quoted text and comments are already masked.
+            start = 0
+            for end in [match.end() for match in re.finditer(";", code_only)] + [len(line)]:
+                display = DISPLAY.search(code_only, start, end)
+                if display and display.group(1) == "menu":
+                    in_menu = True
+                if display or in_menu:
+                    for match in LITERAL.finditer(masked, start, end):
+                        if display and match.start() < display.end():
+                            continue  # Conditions before mes/menu are program data.
+                        key = eligible(match.group(1), masked[start:match.start()], names)
+                        if key:
+                            yield file, number, match.span(1), match.group(1), key
+                if end > start and code_only[end - 1] == ";":
+                    in_menu = False
+                start = end
 
 
 def apply_catalog(npc_dir: Path, catalog: dict[str, str]) -> dict[str, int]:
