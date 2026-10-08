@@ -17,10 +17,6 @@ DISPLAY = re.compile(
     r"(?<![.@$])\b(mes|menu|title|npctalk|announce|dispbottom|message|select)\b"
 )
 COMPLEX = re.compile(r"[@#%$<>]|\\(?!\")")
-FUNCTION_ARGUMENT = re.compile(
-    r"\b(?:getitemlink|getitemname|countitem|strcharinfo|getarg|"
-    r"getvariableofnpc|itemlink|questlog)\s*\([^()]*$", re.I
-)
 SIMPLE_NAME = re.compile(r"^[A-Z][a-z]+$")
 COMMON_WORDS = {
     "Yes", "No", "Hello", "Bye", "Goodbye", "Cancel", "Continue",
@@ -75,8 +71,25 @@ def parts(raw: str) -> tuple[str, str, str]:
     return left, raw, right
 
 
+def in_function_argument(before: str) -> bool:
+    """Do not translate program arguments, including nested get(...) calls.
+
+    NPC display commands take their visible text directly. Literals inside
+    expression functions may instead name another NPC, item or variable.
+    A blacklist misses functions and fails when an earlier argument is a call.
+    """
+    code = LITERAL.sub(lambda match: " " * len(match.group(0)), before)
+    calls = []
+    for match in re.finditer(r"[()]", code):
+        if match.group() == "(":
+            calls.append(bool(re.search(r"\b[A-Za-z_]\w*\s*$", code[:match.start()])))
+        elif calls:
+            calls.pop()
+    return any(calls)
+
+
 def eligible(raw: str, before: str, names: set[str]) -> str | None:
-    if FUNCTION_ARGUMENT.search(before):
+    if in_function_argument(before):
         return None
     _, value, _ = parts(raw)
     core = value.strip()
@@ -105,16 +118,23 @@ def occurrences(npc_dir: Path):
         for number, line in enumerate(file.read_text(encoding="utf-8").splitlines(keepends=True), 1):
             masked, in_block = mask_comments(line, in_block)
             code_only = LITERAL.sub(lambda match: " " * len(match.group(0)), masked)
-            display = DISPLAY.search(code_only)
-            if display and display.group(1) == "menu":
-                in_menu = True
-            if display or in_menu:
-                for match in LITERAL.finditer(masked):
-                    key = eligible(match.group(1), masked[:match.start()], names)
-                    if key:
-                        yield file, number, match.span(1), match.group(1), key
-            if in_menu and ";" in code_only:
-                in_menu = False
+            # A line may contain several commands. End the display scope at
+            # each real semicolon; quoted text and comments are already masked.
+            start = 0
+            for end in [match.end() for match in re.finditer(";", code_only)] + [len(line)]:
+                display = DISPLAY.search(code_only, start, end)
+                if display and display.group(1) == "menu":
+                    in_menu = True
+                if display or in_menu:
+                    for match in LITERAL.finditer(masked, start, end):
+                        if display and match.start() < display.end():
+                            continue  # Conditions before mes/menu are program data.
+                        key = eligible(match.group(1), masked[start:match.start()], names)
+                        if key:
+                            yield file, number, match.span(1), match.group(1), key
+                if end > start and code_only[end - 1] == ";":
+                    in_menu = False
+                start = end
 
 
 def apply_catalog(npc_dir: Path, catalog: dict[str, str]) -> dict[str, int]:
@@ -150,10 +170,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--npc-dir", type=Path, required=True)
     parser.add_argument("--catalog", type=Path, required=True)
+    parser.add_argument("--overrides", type=Path,
+                        help="Reviewed corrections; defaults to npc_es_correcciones.json beside the catalog")
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
     counts = collections.Counter(key for *_, key in occurrences(args.npc_dir))
     catalog = json.loads(args.catalog.read_text(encoding="utf-8")) if args.catalog.exists() else {}
+    overrides = args.overrides or args.catalog.with_name("npc_es_correcciones.json")
+    if overrides.exists():
+        catalog.update(json.loads(overrides.read_text(encoding="utf-8")))
     print(json.dumps({"unique": len(counts), "occurrences": sum(counts.values()),
                       "translated_unique": len(set(counts) & set(catalog))}, ensure_ascii=False))
     if args.apply:

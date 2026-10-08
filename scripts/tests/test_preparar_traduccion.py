@@ -100,6 +100,57 @@ class PrepareTranslation(unittest.TestCase):
         self.assertEqual(self.distance.read_text(), 'message "Aviso personal";\n')
         self.assertEqual(self.npc.read_text(), 'mes "Hello";\n')
 
+    def add_correction(self, original='mes "Hola";'):
+        (self.root / 'localizacion/npc-correcciones-es.patch').write_text(
+            patch('world/map/npc/test.txt', original, 'mes "Hola corregido";'))
+
+    def test_overlapping_correction_from_clean_sources_and_repeat(self):
+        self.add_correction()
+        for _ in range(2):
+            result = self.run_helper()
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(self.npc.read_text(), 'mes "Hola corregido";\n')
+            self.assertEqual(self.distance.read_text(), 'message "Acércate";\n')
+            self.assertEqual(self.account.read_text(), 'cuenta y progreso de prueba\n')
+
+    def test_overlapping_correction_upgrades_old_translation(self):
+        result = self.run_helper()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.add_correction()
+        result = self.run_helper()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.npc.read_text(), 'mes "Hola corregido";\n')
+
+    def test_corrected_sources_keep_unrelated_personal_file(self):
+        self.add_correction()
+        self.assertEqual(self.run_helper().returncode, 0)
+        personal = self.npc.parent / 'personal.txt'
+        personal.write_text('// Un archivo personal fuera de los parches\n')
+        before = personal.read_bytes()
+        result = self.run_helper()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(personal.read_bytes(), before)
+
+    def test_correction_conflict_does_not_partially_apply_other_layers(self):
+        self.add_correction(original='mes "Otra traducción";')
+        result = self.run_helper()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('cambios locales incompatibles', result.stderr)
+        self.assertEqual(self.npc.read_text(), 'mes "Hello";\n')
+        self.assertEqual(self.distance.read_text(), 'message "Move closer";\n')
+        self.assertEqual((self.root / 'sources/mana/po/CMakeLists.txt').read_text(),
+                         'set(LOCALE original)\n')
+
+    def test_native_conflict_does_not_partially_apply_npc_layers(self):
+        self.add_correction()
+        native = self.root / 'sources/mana/po/CMakeLists.txt'
+        native.write_text('set(LOCALE personal)\n')
+        result = self.run_helper()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.npc.read_text(), 'mes "Hello";\n')
+        self.assertEqual(self.distance.read_text(), 'message "Move closer";\n')
+        self.assertEqual(native.read_text(), 'set(LOCALE personal)\n')
+
 
 if __name__ == '__main__':
     unittest.main()
